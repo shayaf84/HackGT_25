@@ -11,7 +11,7 @@ import SwiftUI
 struct HeartifactsApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SleepView()
         }
     }
 }
