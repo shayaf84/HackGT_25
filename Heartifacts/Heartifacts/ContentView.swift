@@ -72,7 +72,7 @@ struct HomeView: View {
                 .scaledToFit()
                 .frame(width: 100, height: 100)
                 .foregroundColor(.yellow)
-                .padding(.top, 50) // Push it down from the top of the screen
+                .padding(.top, 0) // Push it down from the top of the screen
 
             // 2. Title Over the Chandelier
             Text("Welcome Home")
