@@ -10,46 +10,51 @@ import SwiftUI
 // MARK: - Main Content View
 
 struct ContentView: View {
+    @State private var selectedTab = 0
+    
     var body: some View {
-        // TabView with PageTabViewStyle allows for a swipeable, full-screen tab interface.
-        TabView {
-            // 1. Home Tab (Uses a custom, unique HomeView)
-            TabItemView(imageName: "museum", viewName: "Home", textColor: .white) {
-                HomeView() // The new, unique view with the list, counters, and chandelier
-            }
-            .tag(0)
+        ZStack {
+            // Main content with TabView for swiping
+            TabView(selection: $selectedTab) {
+                // 1. Home Tab
+                TabItemView(imageName: "museum", viewName: "Home", textColor: .white) {
+                    HomeView()
+                }
+                .tag(0)
 
-            // 2. Discover Tab (Simple placeholder, or could be replaced with a custom view later)
-            TabItemView(imageName: "sky", viewName: "Discover", textColor: .yellow) {
-                // The TabItemView now takes a content closure.
-                Text("Discover Content")
-                    .foregroundColor(.white)
-            }
-            .tag(1)
+                // 2. Tasks Tab
+                TabItemView(imageName: "task", viewName: "Tasks", textColor: .white) {
+                    TasksView()
+                }
+                .tag(1)
 
-            // 3. Museum Thingy Tab
-            TabItemView(imageName: "task", viewName: "Museum Thingy", textColor: .pink) {
-                Text("Museum Content")
-                    .foregroundColor(.white)
-            }
-            .tag(2)
+                // 3. Gallery Tab
+                TabItemView(imageName: "museum", viewName: "Gallery", textColor: .white) {
+                    GalleryView()
+                }
+                .tag(2)
 
-            // 4. Messages Tab
-            TabItemView(imageName: "sky", viewName: "Messages", textColor: .white) {
-                Text("Messages Content")
-                    .foregroundColor(.white)
-            }
-            .tag(3)
+                // 4. Insights Tab
+                TabItemView(imageName: "sky", viewName: "Insights", textColor: .white) {
+                    InsightsView()
+                }
+                .tag(3)
 
-            // 5. Profile Tab
-            TabItemView(imageName: "person.crop.circle.fill", viewName: "Profile", textColor: .white) {
-                Text("Profile Content")
-                    .foregroundColor(.white)
+                // 5. Profile Tab
+                TabItemView(imageName: "sky", viewName: "Profile", textColor: .white) {
+                    ProfileView()
+                }
+                .tag(4)
             }
-            .tag(4)
+            .tabViewStyle(PageTabViewStyle())
+            .ignoresSafeArea()
+            
+            // Bottom Navigation Bar
+            VStack {
+                Spacer()
+                BottomNavigationBar(selectedTab: $selectedTab)
+            }
         }
-        .tabViewStyle(PageTabViewStyle())
-        .ignoresSafeArea()
     }
 }
 
@@ -190,4 +195,66 @@ struct TabItemView<Content: View>: View {
             content
         }
     }
+}
+
+// MARK: - Bottom Navigation Bar
+
+struct BottomNavigationBar: View {
+    @Binding var selectedTab: Int
+    
+    private let tabs = [
+        NavigationTab(icon: "house.fill", title: "Home", tag: 0),
+        NavigationTab(icon: "checklist", title: "Tasks", tag: 1),
+        NavigationTab(icon: "photo.on.rectangle", title: "Gallery", tag: 2),
+        NavigationTab(icon: "chart.bar.fill", title: "Insights", tag: 3),
+        NavigationTab(icon: "person.fill", title: "Profile", tag: 4)
+    ]
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(tabs, id: \.tag) { tab in
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        selectedTab = tab.tag
+                    }
+                }) {
+                    VStack(spacing: 4) {
+                        ZStack {
+                            // Blue background for selected tab
+                            if selectedTab == tab.tag {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.blue.opacity(0.2))
+                                    .frame(width: 50, height: 50)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.blue, lineWidth: 2)
+                                    )
+                            }
+                            
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(selectedTab == tab.tag ? .blue : .gray)
+                        }
+                        
+                        Text(tab.title)
+                            .font(.caption2)
+                            .foregroundColor(selectedTab == tab.tag ? .blue : .gray)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            Color.white
+                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: -2)
+        )
+    }
+}
+
+struct NavigationTab {
+    let icon: String
+    let title: String
+    let tag: Int
 }
