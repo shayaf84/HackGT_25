@@ -4,9 +4,12 @@
 <dict>
 	<key>com.apple.developer.healthkit</key>
 	<true/>
+<<<<<<< HEAD
 	<key>com.apple.developer.healthkit.access</key>
 	<array>
 		<string>health-records</string>
 	</array>
+=======
+>>>>>>> origin/curatorai
 </dict>
 </plist>
