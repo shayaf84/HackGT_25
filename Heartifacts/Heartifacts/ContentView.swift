@@ -246,10 +246,6 @@ struct BottomNavigationBar: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(
-            Color.white
-                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: -2)
-        )
     }
 }
 
