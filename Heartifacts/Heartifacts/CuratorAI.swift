@@ -22,7 +22,7 @@ class CuratorAI {
     //
     // ----------------- PASTE YOUR KEY HERE -----------------
     //
-    private let apiKey = "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"
+    private let apiKey = "___"
     //
     // -------------------------------------------------------
     //
