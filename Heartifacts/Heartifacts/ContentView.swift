@@ -809,7 +809,7 @@ struct InsightsView: View {
             }
         }
         .background(
-            Image("sky")
+            Image("insights.page")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
