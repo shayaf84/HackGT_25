@@ -37,16 +37,48 @@ struct SleepData {
     }
 }
 
+// MARK: - StressData Model
+struct StressData {
+    let heartRateVariability: Double? // ms
+    let restingHeartRate: Double? // bpm
+    let heartRateSamples: [HKQuantitySample]
+    let mindfulnessMinutes: Double? // minutes
+    let stressLevel: Double? // 0-10 scale if available
+    let collectionDate: Date
+}
+
+// MARK: - MovementData Model
+struct MovementData {
+    let steps: Int
+    let activeEnergyBurned: Double? // kcal
+    let exerciseMinutes: Double? // minutes
+    let standHours: Int? // hours
+    let walkingDistance: Double? // meters
+    let flightsClimbed: Int?
+    let collectionDate: Date
+}
+
+// MARK: - CombinedHealthData Model
+struct CombinedHealthData {
+    let sleepData: SleepData?
+    let stressData: StressData?
+    let movementData: MovementData?
+    let collectionDate: Date
+}
+
 // MARK: - Manager Class
 class Manager: ObservableObject {
     // MARK: - Published Properties
     @Published var sleepData: SleepData?
+    @Published var stressData: StressData?
+    @Published var movementData: MovementData?
+    @Published var combinedHealthData: CombinedHealthData?
     @Published var artData: ArtData?
     @Published var isLoading: Bool = false
     @Published var errorMessage: String = ""
     
     // MARK: - Private Properties
-    private let sleepProcessor = Sleep()
+    private let healthDataProcessor = HealthDataProcessor()
     private let curatorAI = CuratorAI()
     
     // MARK: - Public Methods
@@ -57,7 +89,7 @@ class Manager: ObservableObject {
         errorMessage = ""
         
         // Request HealthKit authorization first
-        sleepProcessor.requestHealthAuthorization { [weak self] success in
+        healthDataProcessor.requestHealthAuthorization { [weak self] success in
             guard success else {
                 DispatchQueue.main.async {
                     self?.isLoading = false
@@ -67,7 +99,7 @@ class Manager: ObservableObject {
             }
             
             // Fetch sleep data
-            self?.sleepProcessor.fetchSleepData { sleepData in
+            self?.healthDataProcessor.fetchSleepData { sleepData in
                 DispatchQueue.main.async {
                     self?.isLoading = false
                     
@@ -82,9 +114,65 @@ class Manager: ObservableObject {
         }
     }
     
+    /// Loads stress data
+    func loadStressData() {
+        healthDataProcessor.fetchStressData { [weak self] stressData in
+            DispatchQueue.main.async {
+                self?.stressData = stressData
+            }
+        }
+    }
+    
+    /// Loads movement data
+    func loadMovementData() {
+        healthDataProcessor.fetchMovementData { [weak self] movementData in
+            DispatchQueue.main.async {
+                self?.movementData = movementData
+            }
+        }
+    }
+    
+    /// Loads all health data (sleep, stress, movement)
+    func loadAllHealthData() {
+        isLoading = true
+        errorMessage = ""
+        
+        // Request HealthKit authorization for all data types
+        healthDataProcessor.requestHealthAuthorization { [weak self] success in
+            guard success else {
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                    self?.errorMessage = "Failed to authorize HealthKit access"
+                }
+                return
+            }
+            
+            // Fetch all health data in parallel
+            self?.healthDataProcessor.fetchAllHealthData { combinedData in
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                    
+                    if let combinedData = combinedData {
+                        self?.sleepData = combinedData.sleepData
+                        self?.stressData = combinedData.stressData
+                        self?.movementData = combinedData.movementData
+                        self?.combinedHealthData = combinedData
+                        
+                        // Generate artwork if sleep data is available
+                        if let sleepData = combinedData.sleepData {
+                            self?.generateArtwork(for: sleepData)
+                        }
+                    } else {
+                        self?.errorMessage = "Failed to fetch health data"
+                    }
+                }
+            }
+        }
+    }
+    
     /// Refreshes the data
     func refreshData() {
-        loadSleepData()
+        loadAllHealthData()
     }
     
     // MARK: - Private Methods
