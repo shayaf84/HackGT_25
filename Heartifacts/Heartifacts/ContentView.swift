@@ -6,6 +6,195 @@
 //
 
 import SwiftUI
+import UIKit
+
+// MARK: - Theme Tokens
+
+enum HeartifactsTheme {
+    static let accent = Color(red: 0.1, green: 0.75, blue: 0.93)
+    static let backgroundTop = Color(red: 0.09, green: 0.03, blue: 0.29)
+    static let backgroundBottom = Color(red: 0.02, green: 0.01, blue: 0.12)
+    static let backgroundHighlight = Color(red: 0.38, green: 0.16, blue: 0.55)
+    static let quietLabel = Color.white.opacity(0.65)
+}
+
+struct AppBackground: View {
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                gradient: Gradient(colors: [HeartifactsTheme.backgroundTop, HeartifactsTheme.backgroundBottom]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            RadialGradient(
+                gradient: Gradient(colors: [HeartifactsTheme.backgroundHighlight.opacity(0.6), .clear]),
+                center: .topLeading,
+                startRadius: 80,
+                endRadius: 600
+            )
+            RadialGradient(
+                gradient: Gradient(colors: [HeartifactsTheme.accent.opacity(0.3), .clear]),
+                center: .bottomTrailing,
+                startRadius: 60,
+                endRadius: 520
+            )
+        }
+        .overlay(
+            LinearGradient(
+                gradient: Gradient(colors: [.white.opacity(0.05), .clear, .white.opacity(0.05)]),
+                startPoint: .top,
+                endPoint: .bottom
+            ).blendMode(.overlay)
+        )
+        .ignoresSafeArea()
+    }
+}
+
+struct GlassBackground: View {
+    var cornerRadius: CGFloat = 28
+    var shadowRadius: CGFloat = 24
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(.ultraThinMaterial)
+            .background(.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Color.white.opacity(0.08))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [HeartifactsTheme.accent.opacity(0.55), Color.blue.opacity(0.35)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.35), radius: shadowRadius, x: 0, y: 18)
+    }
+}
+
+struct GlassCard<Content: View>: View {
+    var cornerRadius: CGFloat
+    var padding: CGFloat
+    @ViewBuilder var content: Content
+
+    init(cornerRadius: CGFloat = 28, padding: CGFloat = 24, @ViewBuilder content: () -> Content) {
+        self.cornerRadius = cornerRadius
+        self.padding = padding
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                GlassBackground(cornerRadius: cornerRadius)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.02), lineWidth: 1)
+                    )
+            )
+    }
+}
+
+struct AnimatedAuroraBackground: View {
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 24)) { timeline in
+            let phase = timeline.date.timeIntervalSinceReferenceDate
+            Canvas { context, size in
+                let baseRect = CGRect(origin: .zero, size: size)
+                let time = CGFloat(phase.truncatingRemainder(dividingBy: 12))
+                let oscillation = sin(time * .pi / 3)
+                let secondaryOscillation = sin((time + 2) * .pi / 4)
+
+                context.fill(
+                    Path(roundedRect: baseRect, cornerRadius: 32),
+                    with: .linearGradient(
+                        Gradient(colors: [
+                            HeartifactsTheme.accent.opacity(0.25),
+                            Color.purple.opacity(0.18),
+                            Color.blue.opacity(0.22)
+                        ]),
+                        startPoint: CGPoint(x: 0, y: 0),
+                        endPoint: CGPoint(x: size.width, y: size.height)
+                    )
+                )
+
+                let waveRect = CGRect(
+                    x: -size.width * 0.2 + oscillation * size.width * 0.12,
+                    y: size.height * 0.1,
+                    width: size.width * 1.4,
+                    height: size.height * 0.8
+                )
+
+                context.fill(
+                    Path(ellipseIn: waveRect),
+                    with: .radialGradient(
+                        Gradient(colors: [
+                            HeartifactsTheme.accent.opacity(0.55),
+                            Color.clear
+                        ]),
+                        center: CGPoint(x: waveRect.midX, y: waveRect.minY + waveRect.height * 0.25),
+                        startRadius: 20,
+                        endRadius: max(waveRect.width, waveRect.height)
+                    )
+                )
+
+                let secondaryRect = CGRect(
+                    x: size.width * 0.1,
+                    y: size.height * (0.25 + secondaryOscillation * 0.1),
+                    width: size.width * 0.9,
+                    height: size.height * 0.7
+                )
+
+                context.fill(
+                    Path(ellipseIn: secondaryRect),
+                    with: .linearGradient(
+                        Gradient(colors: [
+                            Color.purple.opacity(0.4),
+                            Color.blue.opacity(0.15)
+                        ]),
+                        startPoint: CGPoint(x: secondaryRect.minX, y: secondaryRect.midY),
+                        endPoint: CGPoint(x: secondaryRect.maxX, y: secondaryRect.maxY)
+                    )
+                )
+
+                let highlightPath = Path { path in
+                    path.move(to: CGPoint(x: 0, y: size.height * 0.75))
+                    path.addCurve(
+                        to: CGPoint(x: size.width, y: size.height * 0.45),
+                        control1: CGPoint(x: size.width * 0.25, y: size.height * (0.55 + oscillation * 0.05)),
+                        control2: CGPoint(x: size.width * 0.6, y: size.height * (0.4 + secondaryOscillation * 0.07))
+                    )
+                    path.addLine(to: CGPoint(x: size.width, y: size.height))
+                    path.addLine(to: CGPoint(x: 0, y: size.height))
+                    path.closeSubpath()
+                }
+
+                context.fill(
+                    highlightPath,
+                    with: .linearGradient(
+                        Gradient(colors: [
+                            Color.white.opacity(0.08),
+                            Color.clear
+                        ]),
+                        startPoint: CGPoint(x: 0, y: size.height * 0.5),
+                        endPoint: CGPoint(x: 0, y: size.height)
+                    )
+                )
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.35), radius: 40, x: 0, y: 24)
+    }
+}
 
 // MARK: - Main Content View
 
@@ -14,45 +203,40 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            // Main content with TabView for swiping
+            AppBackground()
+
+            VStack(spacing: 0) {
             TabView(selection: $selectedTab) {
-                // 1. Home Tab
-                TabItemView(imageName: "museum", viewName: "Home", textColor: .white) {
+                    TabItemView {
                     HomeView()
                 }
                 .tag(0)
 
-                // 2. Tasks Tab
-                TabItemView(imageName: "task", viewName: "Tasks", textColor: .white) {
+                    TabItemView {
                     TasksView()
                 }
                 .tag(1)
 
-                // 3. Gallery Tab
-                TabItemView(imageName: "museum", viewName: "Gallery", textColor: .white) {
+                    TabItemView {
                     GalleryView()
                 }
                 .tag(2)
 
-                // 4. Insights Tab
-                TabItemView(imageName: "sky", viewName: "Insights", textColor: .white) {
+                    TabItemView {
                     InsightsView()
                 }
                 .tag(3)
 
-                // 5. Profile Tab
-                TabItemView(imageName: "sky", viewName: "Profile", textColor: .white) {
+                    TabItemView {
                     ProfileView()
                 }
                 .tag(4)
             }
-            .tabViewStyle(PageTabViewStyle())
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .ignoresSafeArea()
             
-            // Bottom Navigation Bar
-            VStack {
-                Spacer()
                 BottomNavigationBar(selectedTab: $selectedTab)
+                    .padding(.bottom, 24)
             }
         }
     }
@@ -64,55 +248,460 @@ struct ContentView: View {
 
 /// The unique content for the "Home" tab, including a chandelier, a list, and counters.
 struct HomeView: View {
-    // State variables for the counters
-    @State private var sleepScore = 87
-    @State private var stressLevel = 23
-    @State private var exerciseScore = 92
-    
-    // Weekly data for the graph
-    @State private var weeklyData = [
-        WeeklyData(day: "Mon", sleep: 85, stress: 25, exercise: 88),
-        WeeklyData(day: "Tue", sleep: 82, stress: 30, exercise: 92),
-        WeeklyData(day: "Wed", sleep: 90, stress: 20, exercise: 85),
-        WeeklyData(day: "Thu", sleep: 88, stress: 28, exercise: 95),
-        WeeklyData(day: "Fri", sleep: 83, stress: 35, exercise: 78),
-        WeeklyData(day: "Sat", sleep: 92, stress: 15, exercise: 100),
-        WeeklyData(day: "Sun", sleep: 89, stress: 18, exercise: 90)
-    ]
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Image("museum")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+
+            LinearGradient(gradient: Gradient(colors: [Color.black.opacity(0.6), Color.clear]), startPoint: .top, endPoint: .center)
+                .frame(height: 240)
+                .ignoresSafeArea()
+
+            Text("Heartifacts")
+                .font(.system(size: 44, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+                .padding(.top, 72)
+                .padding(.leading, 28)
+        }
+    }
+}
+
+private struct HeroHeaderSection: View {
+    let title: String
+    let subtitle: String
+    let caption: String
 
     var body: some View {
-        VStack {
-            // 1. Chandelier Element (using SF Symbol for simplicity)
-            // It's positioned at the top of the Vstack to simulate a hanging light.
-            Image(systemName: "light.ceiling.fill")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 100, height: 100)
-                .foregroundColor(.yellow)
-                .padding(.top, 0) // Push it down from the top of the screen
+        VStack(alignment: .leading, spacing: 16) {
+            ZStack {
+                AnimatedAuroraBackground()
+                    .frame(height: 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 40, style: .continuous))
 
-            // 2. Title Over the Chandelier
-            Text("Heartifacts")
-                .font(.system(size: 36, weight: .black, design: .default))
-                .foregroundColor(.white)
-                .shadow(radius: 5)
-                .padding(.bottom, 20)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(title)
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.35), radius: 12, x: 0, y: 8)
 
-            // 3. Counter Elements
-            HStack(spacing: 20) {
-                CounterView(label: "Sleep Score", count: sleepScore, color: .blue)
-                CounterView(label: "Stress", count: stressLevel, color: .red)
-                CounterView(label: "Exercise", count: exerciseScore, color: .green)
+                    Text(subtitle)
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundColor(HeartifactsTheme.quietLabel)
+                }
+                .padding(.leading, 24)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding()
 
-            // 4. Weekly Graph
-            WeeklyHealthGraph(data: weeklyData)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
-
-            Spacer() // Pushes content up
+            Text(caption)
+                .font(.system(size: 18, weight: .medium, design: .rounded))
+                .foregroundColor(HeartifactsTheme.quietLabel)
+                .padding(.leading, 12)
         }
+    }
+}
+
+private struct StatusPillContent: Identifiable {
+    let id = UUID()
+    let title: String
+    let value: Int
+    let color: Color
+    let maxValue: Int
+
+    init(title: String, value: Int, color: Color, maxValue: Int = 100) {
+        self.title = title
+        self.value = value
+        self.color = color
+        self.maxValue = max(maxValue, 1)
+    }
+}
+
+private struct StatusPillsSection: View {
+    let title: String
+    let pillItems: [StatusPillContent]
+
+    var body: some View {
+        GlassCard(cornerRadius: 36, padding: 24) {
+            VStack(alignment: .leading, spacing: 20) {
+                Text(title)
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .foregroundColor(.white)
+
+                HStack(spacing: 16) {
+                    ForEach(pillItems) { item in
+                        StatusPill(content: item)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct StatusPill: View {
+    let content: StatusPillContent
+
+    private var progress: CGFloat {
+        CGFloat(min(max(content.value, 0), content.maxValue)) / CGFloat(content.maxValue)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(content.title.uppercased())
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundColor(HeartifactsTheme.quietLabel)
+
+            Text("\(content.value)")
+                .font(.system(size: 34, weight: .heavy, design: .rounded))
+                .foregroundStyle(content.color)
+                .shadow(color: content.color.opacity(0.6), radius: 10, x: 0, y: 0)
+
+            Capsule()
+                .fill(content.color.opacity(0.35))
+                .frame(height: 4)
+                .overlay(alignment: .leading) {
+                    Capsule()
+                        .fill(content.color)
+                        .frame(width: max(progress * 80, 6), height: 4)
+                }
+        }
+        .padding(18)
+        .background(
+            Capsule(style: .circular)
+                .fill(content.color.opacity(0.18))
+                .overlay(
+                    Capsule(style: .circular)
+                        .stroke(content.color.opacity(0.45), lineWidth: 1)
+                )
+                .shadow(color: content.color.opacity(0.4), radius: 14, x: 0, y: 6)
+        )
+    }
+}
+
+private struct TrendInsightRowContent: Identifiable {
+    let id = UUID()
+    let icon: String
+    let title: String
+    let detail: String
+}
+
+private struct TrendsSection: View {
+    let title: String
+    let subtitle: String
+    var actionTitle: String?
+    var actionIcon: String?
+    var action: (() -> Void)?
+    let highlights: [TrendInsightRowContent]
+    @Binding var weeklyData: [WeeklyData]
+
+    var body: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(title)
+                            .font(.system(size: 22, weight: .semibold, design: .rounded))
+                .foregroundColor(.white)
+
+                        Text(subtitle)
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundColor(HeartifactsTheme.quietLabel)
+                    }
+            
+            Spacer()
+            
+                    if let actionTitle, let action = action {
+                        Button(action: action) {
+                            HStack(spacing: 6) {
+                                if let actionIcon {
+                                    Image(systemName: actionIcon)
+                                }
+                                Text(actionTitle)
+                            }
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundColor(HeartifactsTheme.accent)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(
+                                Capsule()
+                                    .stroke(HeartifactsTheme.accent, lineWidth: 1)
+                                    .background(Capsule().fill(HeartifactsTheme.accent.opacity(0.12)))
+                            )
+                        }
+                    }
+                }
+
+                WeeklyHealthGraph(data: weeklyData)
+
+                HStack(spacing: 16) {
+                    ForEach(highlights) { highlight in
+                        TrendInsightRow(content: highlight)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct TrendInsightRow: View {
+    let content: TrendInsightRowContent
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: content.icon)
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .foregroundColor(HeartifactsTheme.accent)
+                .frame(width: 32, height: 32)
+                .background(
+            Circle()
+                        .fill(HeartifactsTheme.accent.opacity(0.18))
+                        .overlay(
+                            Circle()
+                                .stroke(HeartifactsTheme.accent.opacity(0.45), lineWidth: 1)
+                        )
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(content.title)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundColor(.white)
+            
+                Text(content.detail)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(HeartifactsTheme.quietLabel)
+            }
+            Spacer()
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.06))
+        )
+    }
+}
+
+private struct InsightsNarrativeCard: View {
+    var body: some View {
+        GlassCard(cornerRadius: 32, padding: 26) {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack(spacing: 12) {
+                    Image(systemName: "waveform.path.ecg")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(HeartifactsTheme.accent)
+                        .frame(width: 44, height: 44)
+                        .background(
+            Circle()
+                                .fill(HeartifactsTheme.accent.opacity(0.18))
+                                .overlay(
+                                    Circle()
+                                        .stroke(HeartifactsTheme.accent.opacity(0.35), lineWidth: 1)
+                                )
+                        )
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Narrative Highlights")
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.white)
+
+                        Text("AI curator reflections across your last seven days")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundColor(HeartifactsTheme.quietLabel)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 16) {
+                    NarrativeRow(title: "Rest Resonance", detail: "Sleep clarity is trending upward for three consecutive nights.")
+                    NarrativeRow(title: "Calm Influence", detail: "Lower stress pulses correlate with deeper evening recharge.")
+                    NarrativeRow(title: "Momentum", detail: "Exercise intensity acts as the anchor for balanced energy.")
+                }
+            }
+        }
+    }
+}
+
+private struct NarrativeRow: View {
+    let title: String
+    let detail: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white)
+
+            Text(detail)
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundColor(HeartifactsTheme.quietLabel)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+}
+
+private struct ExploreInsightsCard: View {
+    var body: some View {
+        GlassCard(cornerRadius: 32, padding: 26) {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Explore Archives")
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+
+                        Text("Compare weeks, surface hidden threads, and bookmark revelations.")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundColor(HeartifactsTheme.quietLabel)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(HeartifactsTheme.accent)
+                }
+
+                VStack(spacing: 12) {
+                    ExploreRow(title: "Focus Comparisons", icon: "slider.horizontal.3", detail: "Stack metrics to reveal correlations")
+                    ExploreRow(title: "Moments Library", icon: "bookmark", detail: "Save your favorite insight patterns")
+                    ExploreRow(title: "Coach Connect", icon: "person.2.wave.2.fill", detail: "Share this report with your circle")
+                }
+            }
+        }
+    }
+}
+
+private struct ExploreRow: View {
+    let title: String
+    let icon: String
+    let detail: String
+
+    var body: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.white.opacity(0.05))
+                    .frame(width: 48, height: 48)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(HeartifactsTheme.accent.opacity(0.3), lineWidth: 1)
+                    )
+
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .foregroundColor(HeartifactsTheme.accent)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+
+                Text(detail)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(HeartifactsTheme.quietLabel)
+            }
+
+            Spacer()
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.white.opacity(0.04))
+        )
+    }
+}
+
+private struct TasksPreviewSection: View {
+    var body: some View {
+        GlassCard(cornerRadius: 32, padding: 24) {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Today's Commitments")
+                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+
+                        Text("3 tasks for a calmer you")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundColor(HeartifactsTheme.quietLabel)
+                    }
+
+                    Spacer()
+
+                    Button(action: {}) {
+                        Text("Open Tasks")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .background(
+                                Capsule()
+                                    .fill(HeartifactsTheme.accent)
+                                    .shadow(color: HeartifactsTheme.accent.opacity(0.4), radius: 16, x: 0, y: 12)
+                            )
+                    }
+                }
+
+                VStack(spacing: 14) {
+                    TaskPreviewRow(title: "Evening wind-down", subtitle: "15 min guided breathing")
+                    TaskPreviewRow(title: "Movement ritual", subtitle: "Stretch spine + walk 1.5mi")
+                    TaskPreviewRow(title: "Reflect", subtitle: "Journal 3 gratitude notes")
+                }
+            }
+        }
+    }
+}
+
+private struct TaskPreviewRow: View {
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Circle()
+                .fill(HeartifactsTheme.accent.opacity(0.22))
+                .overlay(
+                    Circle()
+                        .stroke(HeartifactsTheme.accent.opacity(0.45), lineWidth: 1)
+                        .overlay(
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundColor(HeartifactsTheme.accent)
+                        )
+                )
+                .frame(width: 42, height: 42)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                Text(subtitle)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(HeartifactsTheme.quietLabel)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundColor(HeartifactsTheme.quietLabel)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -121,96 +710,6 @@ struct HomeView: View {
 // MARK: - Helper Views
 
 /// A reusable component for a counter display with museum aesthetic.
-struct CounterView: View {
-    let label: String
-    var count: Int? = nil
-    var value: String? = nil // For values that aren't simple integers (like percentages)
-    let color: Color
-
-    var body: some View {
-        VStack(spacing: 8) {
-            Text(value ?? "\(count!)")
-                .font(.system(size: 32, weight: .black, design: .rounded))
-                .foregroundColor(color)
-                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
-            
-            Text(label)
-                .font(.system(.caption, design: .serif))
-                .fontWeight(.medium)
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                gradient: Gradient(colors: [color.opacity(0.4), .cyan.opacity(0.2)]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
-                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
-        )
-    }
-}
-
-/// A reusable component for a list row with museum aesthetic.
-struct MuseumTaskRow: View {
-    let task: String
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundColor(.cyan)
-                .font(.title3)
-                .shadow(color: .cyan.opacity(0.3), radius: 2, x: 0, y: 1)
-            
-            Text(task)
-                .font(.system(.body, design: .serif))
-                .fontWeight(.medium)
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.3), radius: 1, x: 0, y: 1)
-            
-            Spacer()
-            
-            // Subtle decorative element
-            Circle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [.gold.opacity(0.3), .cyan.opacity(0.2)]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 6, height: 6)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                gradient: Gradient(colors: [.cyan.opacity(0.2), .gold.opacity(0.1)]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            lineWidth: 0.5
-                        )
-                )
-                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-        )
-    }
-}
 
 // MARK: - Weekly Data Model
 struct WeeklyData {
@@ -237,130 +736,110 @@ struct WeeklyHealthGraph: View {
     }
     
     var body: some View {
-        VStack(spacing: 12) {
-            // Header
-            HStack {
-                Text("Weekly Trends")
-                    .font(.system(.title3, design: .serif))
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                Spacer()
-            }
-            
-            // Graph Container
-            VStack(spacing: 8) {
-                // Graph area with smooth lines
-                ZStack {
-                    // Grid lines
-                    VStack(spacing: 0) {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.1))
-                            .frame(height: 1)
-                        Spacer()
-                        Rectangle()
-                            .fill(Color.white.opacity(0.1))
-                            .frame(height: 1)
-                        Spacer()
-                        Rectangle()
-                            .fill(Color.white.opacity(0.1))
-                            .frame(height: 1)
-                    }
-                    .frame(height: 80)
-                    
-                    // Smooth connected lines
+        VStack(spacing: 18) {
                     GeometryReader { geometry in
-                        let width = geometry.size.width
-                        let height = geometry.size.height
+                let size = geometry.size
                         
                         ZStack {
-                            // Sleep line (Blue)
-                            Path { path in
-                                for (index, dayData) in data.enumerated() {
-                                    let x = CGFloat(index) / CGFloat(data.count - 1) * width
-                                    let y = height - (CGFloat(dayData.sleep - minValue) / CGFloat(maxValue - minValue)) * height
-                                    
-                                    if index == 0 {
-                                        path.move(to: CGPoint(x: x, y: y))
-                                    } else {
-                                        path.addLine(to: CGPoint(x: x, y: y))
-                                    }
-                                }
-                            }
-                            .stroke(Color.blue, lineWidth: 2)
-                            
-                            // Stress line (Red)
-                            Path { path in
-                                for (index, dayData) in data.enumerated() {
-                                    let x = CGFloat(index) / CGFloat(data.count - 1) * width
-                                    let y = height - (CGFloat(dayData.stress - minValue) / CGFloat(maxValue - minValue)) * height
-                                    
-                                    if index == 0 {
-                                        path.move(to: CGPoint(x: x, y: y))
-                                    } else {
-                                        path.addLine(to: CGPoint(x: x, y: y))
-                                    }
-                                }
-                            }
-                            .stroke(Color.red, lineWidth: 2)
-                            
-                            // Exercise line (Green)
-                            Path { path in
-                                for (index, dayData) in data.enumerated() {
-                                    let x = CGFloat(index) / CGFloat(data.count - 1) * width
-                                    let y = height - (CGFloat(dayData.exercise - minValue) / CGFloat(maxValue - minValue)) * height
-                                    
-                                    if index == 0 {
-                                        path.move(to: CGPoint(x: x, y: y))
-                                    } else {
-                                        path.addLine(to: CGPoint(x: x, y: y))
-                                    }
-                                }
-                            }
-                            .stroke(Color.green, lineWidth: 2)
-                        }
-                    }
-                    .frame(height: 80)
-                }
-                
-                // X-axis labels (Mon-Sun)
-                HStack {
-                    ForEach(data, id: \.day) { dayData in
-                        Text(dayData.day)
-                            .font(.system(.caption2, design: .default))
-                            .foregroundColor(.white.opacity(0.7))
-                        if dayData.day != data.last?.day {
-                            Spacer()
-                        }
-                    }
-                }
-                
-                // Legend
-                HStack(spacing: 16) {
-                    LegendItem(color: .blue, label: "Sleep")
-                    LegendItem(color: .red, label: "Stress")
-                    LegendItem(color: .green, label: "Exercise")
-                    Spacer()
+                    gridLines(in: size)
+
+                    lineView(for: \.sleep, color: .blue, size: size)
+                    lineView(for: \.stress, color: .red, size: size)
+                    lineView(for: \.exercise, color: .green, size: size)
                 }
             }
+            .frame(height: 180)
+            .background(
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(Color.white.opacity(0.04))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                    )
+            )
+
+            HStack {
+                ForEach(data, id: \.day) { dayData in
+                    Text(dayData.day)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundColor(HeartifactsTheme.quietLabel)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
+            HStack(spacing: 14) {
+                LegendItem(color: .blue, label: "Sleep")
+                LegendItem(color: .red, label: "Stress")
+                LegendItem(color: .green, label: "Exercise")
+                Spacer()
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.ultraThinMaterial)
+    }
+
+    private func gridLines(in size: CGSize) -> some View {
+        let horizontalLines = 4
+
+        return ZStack {
+            ForEach(0...horizontalLines, id: \.self) { index in
+                Path { path in
+                    let y = size.height * CGFloat(index) / CGFloat(horizontalLines)
+                    path.move(to: CGPoint(x: 0, y: y))
+                    path.addLine(to: CGPoint(x: size.width, y: y))
+                }
+                .stroke(Color.white.opacity(index == horizontalLines ? 0.2 : 0.08), style: StrokeStyle(lineWidth: index == horizontalLines ? 1.5 : 1, dash: [6, 6]))
+            }
+
+            ForEach(0..<data.count, id: \.self) { index in
+                Path { path in
+                    let x = size.width * CGFloat(index) / CGFloat(max(data.count - 1, 1))
+                    path.move(to: CGPoint(x: x, y: 0))
+                    path.addLine(to: CGPoint(x: x, y: size.height))
+                }
+                .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
+            }
+        }
+    }
+
+    private func lineView(for keyPath: KeyPath<WeeklyData, Int>, color: Color, size: CGSize) -> some View {
+        let path = linePath(for: keyPath, in: size)
+
+        return path
+            .stroke(color.opacity(0.75), lineWidth: 3)
+            .shadow(color: color.opacity(0.6), radius: 16, x: 0, y: 0)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                path
                         .stroke(
                             LinearGradient(
-                                gradient: Gradient(colors: [.cyan.opacity(0.3), .gold.opacity(0.2)]),
+                            colors: [color.opacity(0.35), color],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: 0.5
-                        )
-                )
-                .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
-        )
+                        lineWidth: 2
+                    )
+            )
+    }
+
+    private func linePath(for keyPath: KeyPath<WeeklyData, Int>, in size: CGSize) -> Path {
+        let count = data.count
+        guard count > 1 else { return Path() }
+        let range = max(maxValue - minValue, 1)
+        let topPadding: CGFloat = size.height * 0.1
+        let availableHeight = size.height - topPadding * 1.5
+
+        var path = Path()
+        for (index, point) in data.enumerated() {
+            let progress = CGFloat(index) / CGFloat(max(count - 1, 1))
+            let x = progress * size.width
+            let normalized = CGFloat(point[keyPath: keyPath] - minValue) / CGFloat(range)
+            let y = size.height - (normalized * availableHeight) - topPadding
+
+            if index == 0 {
+                path.move(to: CGPoint(x: x, y: y))
+            } else {
+                path.addLine(to: CGPoint(x: x, y: y))
+            }
+        }
+        return path
     }
 }
 
@@ -370,14 +849,21 @@ struct LegendItem: View {
     let label: String
     
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
+                .fill(color.opacity(0.8))
+                .frame(width: 10, height: 10)
+                .shadow(color: color.opacity(0.6), radius: 6, x: 0, y: 0)
             Text(label)
-                .font(.system(.caption2, design: .default))
-                .foregroundColor(.white.opacity(0.8))
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundColor(.white)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.06))
+        )
     }
 }
 
@@ -392,39 +878,14 @@ extension Color {
 
 /// A reusable view for each tab's content, which applies a full-screen background and accepts unique `content`.
 struct TabItemView<Content: View>: View {
-    let imageName: String
-    let viewName: String
-    let textColor: Color
-    @ViewBuilder let content: Content // Accepts any SwiftUI view as content
-
-    // Helper property to safely check if the imageName is a valid SF Symbol.
-    private var isSFSymbol: Bool {
-        // Use the search tool to verify the SF Symbol is valid before shipping.
-        UIImage(systemName: imageName) != nil
-    }
+    @ViewBuilder let content: Content
 
     var body: some View {
         ZStack {
-            // Background Image or Symbol
-            Group {
-                if isSFSymbol {
-                    Image(systemName: imageName)
-                        .resizable()
-                        .scaledToFit()
-                        .foregroundColor(.gray)
-                } else {
-                    Image(imageName)
-                        .resizable()
-                        .renderingMode(.original)
-                        .scaledToFill()
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .edgesIgnoringSafeArea(.all)
-
-            // Content provided by the call site (HomeView, Text("Discover Content"), etc.)
+            AppBackground()
             content
         }
+        .ignoresSafeArea()
     }
 }
 
@@ -442,41 +903,64 @@ struct BottomNavigationBar: View {
     ]
     
     var body: some View {
+        GlassCard(cornerRadius: 34, padding: 18) {
         HStack(spacing: 0) {
             ForEach(tabs, id: \.tag) { tab in
                 Button(action: {
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                        withAnimation(.interactiveSpring(response: 0.5, dampingFraction: 0.8, blendDuration: 0.6)) {
                         selectedTab = tab.tag
                     }
+                        triggerHaptic()
                 }) {
-                    VStack(spacing: 4) {
+                        VStack(spacing: 8) {
                         ZStack {
-                            // Blue background for selected tab
                             if selectedTab == tab.tag {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.blue.opacity(0.2))
-                                    .frame(width: 50, height: 50)
+                                    Capsule()
+                                        .fill(HeartifactsTheme.accent.opacity(0.25))
+                                        .frame(width: 56, height: 40)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.blue, lineWidth: 2)
+                                            Capsule()
+                                                .stroke(HeartifactsTheme.accent, lineWidth: 1.2)
                                     )
+                                        .shadow(color: HeartifactsTheme.accent.opacity(0.45), radius: 10, x: 0, y: 4)
                             }
                             
                             Image(systemName: tab.icon)
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(selectedTab == tab.tag ? .blue : .gray)
+                                    .font(.system(size: 19, weight: .semibold, design: .rounded))
+                                    .foregroundColor(selectedTab == tab.tag ? HeartifactsTheme.accent : HeartifactsTheme.quietLabel)
+                                    .shadow(color: selectedTab == tab.tag ? HeartifactsTheme.accent.opacity(0.6) : .clear, radius: 8, x: 0, y: 0)
                         }
+                            .frame(height: 40)
                         
                         Text(tab.title)
-                            .font(.caption2)
-                            .foregroundColor(selectedTab == tab.tag ? .blue : .gray)
+                                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                .foregroundColor(selectedTab == tab.tag ? .white : HeartifactsTheme.quietLabel)
+                                .overlay(alignment: .bottom) {
+                                    if selectedTab == tab.tag {
+                                        Capsule()
+                                            .fill(HeartifactsTheme.accent)
+                                            .frame(width: 18, height: 3)
+                                            .offset(y: 6)
+                                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                                    }
                     }
                 }
                 .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                        .animation(.easeInOut(duration: 0.3), value: selectedTab)
+                    }
+                }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 24)
+    }
+
+    private func triggerHaptic() {
+        #if os(iOS)
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.prepare()
+        generator.impactOccurred()
+        #endif
     }
 }
 
@@ -747,278 +1231,65 @@ struct AchievementRow: View {
 
 // MARK: - Insights View
 struct InsightsView: View {
-    @State private var currentWeek = 0
-    @State private var sleepQuality: Double = 0.87
-    @State private var stressLevel: Double = 0.23
-    @State private var exerciseIntensity: Double = 0.92
-    @State private var aiCuratorNote = "This crystal grew brighter this week thanks to consistent rest. Your sleep patterns show remarkable improvement!"
-    
-    private let weeklyData = [
-        WeekData(week: "This Week", sleep: 87, stress: 23, exercise: 92, correlation: "Sleep ↔ Exercise"),
-        WeekData(week: "Last Week", sleep: 82, stress: 31, exercise: 78, correlation: "Stress ↑ Exercise ↓"),
-        WeekData(week: "2 Weeks Ago", sleep: 75, stress: 45, exercise: 65, correlation: "All metrics improving"),
-        WeekData(week: "3 Weeks Ago", sleep: 68, stress: 52, exercise: 58, correlation: "Stress dominant")
+    @State private var sleepScore = 90
+    @State private var stressLevel = 18
+    @State private var exerciseScore = 88
+
+    @State private var weeklyData = [
+        WeeklyData(day: "Mon", sleep: 88, stress: 22, exercise: 85),
+        WeeklyData(day: "Tue", sleep: 90, stress: 20, exercise: 91),
+        WeeklyData(day: "Wed", sleep: 92, stress: 18, exercise: 86),
+        WeeklyData(day: "Thu", sleep: 87, stress: 24, exercise: 93),
+        WeeklyData(day: "Fri", sleep: 85, stress: 28, exercise: 80),
+        WeeklyData(day: "Sat", sleep: 94, stress: 16, exercise: 95),
+        WeeklyData(day: "Sun", sleep: 91, stress: 19, exercise: 90)
     ]
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Museum Header
-                HStack {
-                    Image(systemName: "sparkles")
-                        .foregroundColor(.gold)
-                        .font(.title2)
-                    Text("Museum of Insights")
-                        .font(.system(.largeTitle, design: .serif))
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                
-                // AI Curator Note
-                AICuratorNote(note: aiCuratorNote)
-                
-                // Current Week Artifacts Gallery
-                VStack(spacing: 16) {
-                    Text("Current Exhibit")
-                        .font(.system(.title2, design: .serif))
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                    
-                    // Dynamic Artifacts
-                    HStack(spacing: 20) {
-                        SleepCrystal(clarity: sleepQuality)
-                        StressSculpture(bend: stressLevel)
-                        ExerciseOrb(energy: exerciseIntensity)
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // Linked Artifacts with Glowing Threads
-                    if sleepQuality > 0.8 && exerciseIntensity > 0.8 {
-                        LinkedArtifactsView()
-                    }
-                }
-                
-                // Weekly Timeline Gallery
-                WeeklyTimelineGallery(data: weeklyData, currentWeek: $currentWeek)
-                
-                Spacer(minLength: 100) // Space for bottom navigation
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 28) {
+                HeroHeaderSection(
+                    title: "Insights",
+                    subtitle: "Glow of your evolving patterns",
+                    caption: "7-day analysis"
+                )
+
+                StatusPillsSection(
+                    title: "Signals",
+                    pillItems: [
+                        StatusPillContent(title: "Sleep", value: sleepScore, color: .blue),
+                        StatusPillContent(title: "Stress", value: stressLevel, color: .red),
+                        StatusPillContent(title: "Exercise", value: exerciseScore, color: .green)
+                    ]
+                )
+
+                TrendsSection(
+                    title: "Rhythm Insights",
+                    subtitle: "Averages & glows across the spectrum",
+                    actionTitle: "Compare",
+                    actionIcon: "arrow.down.left.and.arrow.up.right",
+                    action: {},
+                    highlights: [
+                        TrendInsightRowContent(icon: "sparkles", title: "Sleep ↗", detail: "+3 to nightly clarity"),
+                        TrendInsightRowContent(icon: "heart.fill", title: "Stress ↘", detail: "Down 5 points vs last week"),
+                        TrendInsightRowContent(icon: "bolt.circle", title: "Exercise ↗", detail: "Energy holds steady")
+                    ],
+                    weeklyData: $weeklyData
+                )
+
+                InsightsNarrativeCard()
+
+                ExploreInsightsCard()
             }
+            .padding(.horizontal, 24)
+            .padding(.top, 48)
+            .padding(.bottom, 120)
         }
-        .background(
-            Image("insights.page")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-        )
+        .background(.clear)
     }
 }
 
 // MARK: - AI Curator Note
-struct AICuratorNote: View {
-    let note: String
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "brain.head.profile")
-                    .foregroundColor(.cyan)
-                    .font(.title3)
-                Text("AI Curator's Note")
-                    .font(.system(.headline, design: .serif))
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                Spacer()
-            }
-            
-            Text(note)
-                .font(.system(.body, design: .serif))
-                .foregroundColor(.white.opacity(0.9))
-                .lineLimit(nil)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                gradient: Gradient(colors: [.cyan.opacity(0.4), .gold.opacity(0.3)]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
-                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
-        )
-        .padding(.horizontal, 20)
-    }
-}
-
-// MARK: - Sleep Crystal
-struct SleepCrystal: View {
-    let clarity: Double
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            ZStack {
-                // Crystal base
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.blue.opacity(0.3))
-                    .frame(width: 60, height: 80)
-                
-                // Crystal facets
-                ForEach(0..<3, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color.blue.opacity(0.8 * clarity),
-                                    Color.cyan.opacity(0.6 * clarity)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 40, height: 60)
-                        .offset(x: CGFloat(index - 1) * 8, y: CGFloat(index - 1) * 5)
-                }
-            }
-            .shadow(color: .blue.opacity(0.5), radius: 8, x: 0, y: 4)
-            
-            Text("Sleep Crystal")
-                .font(.system(.caption, design: .serif))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-        }
-    }
-}
-
-// MARK: - Stress Sculpture
-struct StressSculpture: View {
-    let bend: Double
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            ZStack {
-                // Sculpture base
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.red.opacity(0.3))
-                    .frame(width: 60, height: 80)
-                
-                // Bending sculpture
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.red.opacity(0.8),
-                                Color.orange.opacity(0.6)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 40, height: 60)
-                    .rotationEffect(.degrees(bend * 30 - 15)) // Bend based on stress
-                    .offset(x: bend * 10 - 5, y: bend * 5)
-            }
-            .shadow(color: .red.opacity(0.5), radius: 8, x: 0, y: 4)
-            
-            Text("Stress Sculpture")
-                .font(.system(.caption, design: .serif))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-        }
-    }
-}
-
-// MARK: - Exercise Orb
-struct ExerciseOrb: View {
-    let energy: Double
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            ZStack {
-                // Orb base
-                Circle()
-                    .fill(Color.green.opacity(0.3))
-                    .frame(width: 80, height: 80)
-                
-                // Energy rings
-                ForEach(0..<3, id: \.self) { index in
-                    Circle()
-                        .stroke(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color.green.opacity(0.8 * energy),
-                                    Color.mint.opacity(0.6 * energy)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 3
-                        )
-                        .frame(width: 60 - CGFloat(index * 15), height: 60 - CGFloat(index * 15))
-                        .scaleEffect(1.0 + energy * 0.3)
-                }
-            }
-            .shadow(color: .green.opacity(0.5), radius: 8, x: 0, y: 4)
-            
-            Text("Exercise Orb")
-                .font(.system(.caption, design: .serif))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-        }
-    }
-}
-
-// MARK: - Linked Artifacts
-struct LinkedArtifactsView: View {
-    var body: some View {
-        VStack(spacing: 12) {
-            Text("Connected Patterns")
-                .font(.system(.headline, design: .serif))
-                .foregroundColor(.white)
-            
-            HStack(spacing: 30) {
-                // Glowing connection lines
-                HStack(spacing: 0) {
-                    Circle()
-                        .fill(Color.cyan)
-                        .frame(width: 8, height: 8)
-                        .shadow(color: .cyan, radius: 4)
-                    
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [.cyan, .blue]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(height: 2)
-                        .shadow(color: .cyan, radius: 2)
-                    
-                    Circle()
-                        .fill(Color.blue)
-                        .frame(width: 8, height: 8)
-                        .shadow(color: .blue, radius: 4)
-                }
-                
-                Text("Sleep ↔ Exercise")
-                    .font(.system(.caption, design: .serif))
-                    .foregroundColor(.white.opacity(0.8))
-            }
-        }
-        .padding(.horizontal, 20)
-    }
-}
 
 // MARK: - Weekly Timeline Gallery
 struct WeeklyTimelineGallery: View {
