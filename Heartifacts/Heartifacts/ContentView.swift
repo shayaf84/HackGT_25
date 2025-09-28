@@ -1054,11 +1054,8 @@ struct GalleryView: View {
     
     var body: some View {
         ZStack {
-            // Museum background
-            Image("museum")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
+            // Parallax museum background
+            ParallaxBackgroundView(selectedIndex: selectedArtifactIndex)
             
             // Dark overlay for better text visibility
             LinearGradient(
@@ -1102,6 +1099,7 @@ struct GalleryView: View {
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 .frame(maxHeight: .infinity)
+                .animation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.3), value: selectedArtifactIndex)
                 
                 // Artifact info panel
                 VStack(spacing: 16) {
@@ -1110,6 +1108,7 @@ struct GalleryView: View {
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                         .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                        .animation(.easeInOut(duration: 0.3), value: selectedArtifact.name)
                     
                     Text(selectedArtifact.description)
                         .font(.system(size: 16, weight: .medium, design: .rounded))
@@ -1117,6 +1116,7 @@ struct GalleryView: View {
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
                         .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                        .animation(.easeInOut(duration: 0.3), value: selectedArtifact.description)
                 }
                 .padding(.horizontal, 32)
                 .padding(.bottom, 120)
@@ -1156,6 +1156,48 @@ struct ArtifactCard: View {
         .padding()
         .background(Color.black.opacity(0.4))
         .cornerRadius(15)
+    }
+}
+
+struct ParallaxBackgroundView: View {
+    let selectedIndex: Int
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let screenWidth = geometry.size.width
+            let parallaxOffset = CGFloat(selectedIndex) * screenWidth * 0.3
+            
+            ZStack {
+                // Base museum image
+                Image("museum")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: screenWidth * 1.6, height: geometry.size.height)
+                    .offset(x: -parallaxOffset * 0.2)
+                    .clipped()
+                
+                // Secondary layer for depth
+                Image("museum")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: screenWidth * 1.4, height: geometry.size.height)
+                    .offset(x: -parallaxOffset * 0.4)
+                    .opacity(0.6)
+                    .blur(radius: 2)
+                    .clipped()
+                
+                // Foreground elements
+                Image("museum")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: screenWidth * 1.2, height: geometry.size.height)
+                    .offset(x: -parallaxOffset * 0.6)
+                    .opacity(0.8)
+                    .clipped()
+            }
+            .ignoresSafeArea()
+        }
+        .animation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.3), value: selectedIndex)
     }
 }
 
