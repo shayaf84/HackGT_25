@@ -2,6 +2,10 @@ import SwiftUI
 import HealthKit
 
 struct ContentView: View {
+    // MARK: - Manager Integration
+    @StateObject private var manager = Manager()
+    
+    // MARK: - Steps Data (keeping existing functionality)
     @State private var stepToday: Int = 0
     @State private var step24h: Int = 0
     @State private var debugText: String = ""
@@ -9,12 +13,75 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("Steps Today: \(stepToday)").font(.title2).bold()
-            Text("Steps Last 24h: \(step24h)").font(.title3)
-            ScrollView { Text(debugText).font(.caption.monospaced()).padding(.horizontal) }
+            Text("Heartifacts")
+                .font(.title)
+            
+            // Manager Loading State
+            if manager.isLoading {
+                Text("Loading...")
+            }
+            
+            // Manager Error State
+            if !manager.errorMessage.isEmpty {
+                Text("Error: \(manager.errorMessage)")
+                    .foregroundColor(.red)
+            }
+            
+            // Manager Sleep Data
+            if let sleepData = manager.sleepData {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Sleep Data:")
+                        .font(.headline)
+                    Text("REM Sleep: \(sleepData.formattedRemSleep)")
+                    Text("Deep Sleep: \(sleepData.formattedDeepSleep)")
+                    Text("Core Sleep: \(sleepData.formattedCoreSleep)")
+                    Text("Total Sleep: \(sleepData.formattedTotalSleep)")
+                    Text("Awakenings: \(sleepData.awakenings)")
+                    Text("Sleep Score: \(sleepData.sleepScore)")
+                }
+            }
+            
+            // Manager AI Message
+            if !manager.aiMessage.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("AI Message:")
+                        .font(.headline)
+                    Text(manager.aiMessage)
+                }
+            }
+            
+            // Steps Data
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Steps:")
+                    .font(.headline)
+                Text("Today: \(stepToday)")
+                Text("Last 24h: \(step24h)")
+            }
+            
+            // Debug Text
+            if !debugText.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Debug:")
+                        .font(.headline)
+                    ScrollView {
+                        Text(debugText)
+                            .font(.caption)
+                    }
+                    .frame(height: 100)
+                }
+            }
+            
+            // Refresh Button
+            Button("Refresh") {
+                manager.refreshData()
+                requestHealthKitAuth()
+            }
         }
         .padding()
-        .onAppear { requestHealthKitAuth() }
+        .onAppear {
+            manager.loadSleepData()
+            requestHealthKitAuth()
+        }
     }
 
     private func requestHealthKitAuth() {

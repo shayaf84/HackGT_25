@@ -1,138 +1,118 @@
-import SwiftUI
+import Foundation
 import HealthKit
 
-struct SleepView : View {
-    @State private var remSleepSeconds: TimeInterval = 0
-    @State private var deepSleepSeconds: TimeInterval = 0
-    @State private var coreSleepSeconds: TimeInterval = 0
-    @State private var awakenings = 0
-    @State private var totalSleepSeconds: TimeInterval = 0
-    @State private var processDataCallCount = 0
+// MARK: - Sleep Class
+class Sleep {
+    private let healthStore = HKHealthStore()
     
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("REM Sleep: \(fmt(remSleepSeconds))")
-            Text("Deep Sleep: \(fmt(deepSleepSeconds))")
-            Text("Core Sleep: \(fmt(coreSleepSeconds))")
-            Text("Total Sleep: \(fmt(totalSleepSeconds))")
-            Text("Awakenings: \(awakenings)")
-            Text("ProcessData calls: \(processDataCallCount)")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .padding()
-        .onAppear { requestHealthAuthorization()}
-    }
+    // MARK: - Public Methods (Called by Manager)
     
-    
-    
-    
-    let healthStore = HKHealthStore()
-    
-    
-    func requestHealthAuthorization() {
+    /// Requests HealthKit authorization for sleep data
+    func requestHealthAuthorization(completion: @escaping (Bool) -> Void) {
         guard HKHealthStore.isHealthDataAvailable() else {
             print("HealthKit is not available on this device")
+            completion(false)
             return
         }
         
         let typesToRead: Set<HKObjectType> = [HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!]
         
-        healthStore.requestAuthorization(toShare: [], read: typesToRead) {
-            (success, error) in
+        healthStore.requestAuthorization(toShare: [], read: typesToRead) { success, error in
             if success {
-                fetchSleepData()
+                print("HealthKit authorization successful")
+                completion(true)
             } else {
-                print("HealthKit authorization failed")
+                print("HealthKit authorization failed: \(error?.localizedDescription ?? "unknown error")")
+                completion(false)
             }
         }
     }
     
-    func fetchSleepData() {
+    /// Fetches and processes sleep data from HealthKit
+    func fetchSleepData(completion: @escaping (SleepData?) -> Void) {
         let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
         let calendar = Calendar.current
         let now = Date()
         
         let startOfPreviousNight = calendar.date(bySettingHour: 18, minute: 0, second: 0, of: now.addingTimeInterval(-86400))!
-        
         let endOfPreviousNight = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: now)!
         
         let predicate = HKQuery.predicateForSamples(withStart: startOfPreviousNight, end: endOfPreviousNight, options: .strictStartDate)
-        let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) {
-            (query, samples, error) in
-            guard let samples = samples as? [HKCategorySample] else { return }
-            processData(samples: samples)
+        let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { [weak self] query, samples, error in
+            guard let self = self else { return }
             
+            if let error = error {
+                print("Sleep data query error: \(error.localizedDescription)")
+                completion(nil)
+                return
+            }
+            
+            guard let samples = samples as? [HKCategorySample] else {
+                print("No sleep samples found")
+                completion(nil)
+                return
+            }
+            
+            let sleepData = self.processSleepSamples(samples)
+            completion(sleepData)
         }
-        healthStore.execute(query)
         
+        healthStore.execute(query)
     }
     
-    func processData(samples: [HKCategorySample]) {
-        processDataCallCount += 1
-        print("=== processData called #\(processDataCallCount) with \(samples.count) samples ===")
+    // MARK: - Private Methods
+    
+    /// Processes sleep samples and returns SleepData
+    private func processSleepSamples(_ samples: [HKCategorySample]) -> SleepData {
+        var remSleepSeconds: TimeInterval = 0
+        var deepSleepSeconds: TimeInterval = 0
+        var coreSleepSeconds: TimeInterval = 0
+        var awakenings = 0
         
-        // Reset counters before processing new data
-        remSleepSeconds = 0
-        deepSleepSeconds = 0
-        coreSleepSeconds = 0
-        awakenings = 0
-        totalSleepSeconds = 0
-        
-        // Remove the restrictive filter - include all sleep data sources
-        print("Found \(samples.count) sleep samples")
+        print("Processing \(samples.count) sleep samples")
         
         for sample in samples {
-            let source = sample.sourceRevision.source.bundleIdentifier
             let duration = sample.endDate.timeIntervalSince(sample.startDate)
             let value = sample.value
             
-            print("Sample: \(sample.startDate) - \(sample.endDate) | Duration: \(duration/3600)h | Value: \(value) | Source: \(source)")
-            
             switch value {
             case HKCategoryValueSleepAnalysis.asleepREM.rawValue:
-                self.remSleepSeconds += duration
-                print("  -> Added to REM: \(duration/3600)h (total now: \(self.remSleepSeconds/3600)h)")
+                remSleepSeconds += duration
                 
             case HKCategoryValueSleepAnalysis.asleepCore.rawValue:
-                self.coreSleepSeconds += duration
-                print("  -> Added to Core: \(duration/3600)h (total now: \(self.coreSleepSeconds/3600)h)")
+                coreSleepSeconds += duration
                 
             case HKCategoryValueSleepAnalysis.asleepDeep.rawValue:
-                self.deepSleepSeconds += duration
-                print("  -> Added to Deep: \(duration/3600)h (total now: \(self.deepSleepSeconds/3600)h)")
+                deepSleepSeconds += duration
                 
             case HKCategoryValueSleepAnalysis.awake.rawValue:
-                self.awakenings += 1
-                print("  -> Added awakening (total now: \(self.awakenings))")
+                awakenings += 1
                 
             default:
-                print("  -> Unknown sleep type: \(value)")
                 break
             }
         }
-        self.totalSleepSeconds = deepSleepSeconds + coreSleepSeconds + remSleepSeconds
         
-        print("Sleep totals - REM: \(remSleepSeconds), Deep: \(deepSleepSeconds), Core: \(coreSleepSeconds), Total: \(totalSleepSeconds)")
+        let totalSleepSeconds = deepSleepSeconds + coreSleepSeconds + remSleepSeconds
+        let sleepScore = calculateSleepScore(totalSleep: totalSleepSeconds, awakenings: awakenings)
         
-        // Update UI on main thread
-        DispatchQueue.main.async {
-            self.remSleepSeconds = self.remSleepSeconds
-            self.deepSleepSeconds = self.deepSleepSeconds
-            self.coreSleepSeconds = self.coreSleepSeconds
-            self.totalSleepSeconds = self.totalSleepSeconds
-            self.awakenings = self.awakenings
-        }
+        print("Sleep totals - REM: \(remSleepSeconds/3600)h, Deep: \(deepSleepSeconds/3600)h, Core: \(coreSleepSeconds/3600)h, Total: \(totalSleepSeconds/3600)h, Awakenings: \(awakenings)")
+        
+        return SleepData(
+            remSleepSeconds: remSleepSeconds,
+            deepSleepSeconds: deepSleepSeconds,
+            coreSleepSeconds: coreSleepSeconds,
+            totalSleepSeconds: totalSleepSeconds,
+            awakenings: awakenings,
+            sleepScore: sleepScore
+        )
     }
     
-    private func fmt(_ seconds: TimeInterval) -> String {
-            let f = DateComponentsFormatter()
-            f.allowedUnits = [.hour, .minute]
-            f.unitsStyle = .abbreviated
-            f.zeroFormattingBehavior = .dropAll
-            return f.string(from: seconds) ?? "0m"
+    /// Calculates sleep score based on duration and awakenings
+    private func calculateSleepScore(totalSleep: TimeInterval, awakenings: Int) -> Int {
+        let hoursOfSleep = totalSleep / 3600
+        var score = (hoursOfSleep / 8.0) * 80 // Score out of 80 for sleep duration
+        score -= Double(awakenings * 5) // Penalize for waking up
+        return max(0, min(100, Int(score)))
     }
-
-    
-
 }
