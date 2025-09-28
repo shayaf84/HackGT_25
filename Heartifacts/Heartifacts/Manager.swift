@@ -41,7 +41,7 @@ struct SleepData {
 class Manager: ObservableObject {
     // MARK: - Published Properties
     @Published var sleepData: SleepData?
-    @Published var aiMessage: String = ""
+    @Published var artData: ArtData?
     @Published var isLoading: Bool = false
     @Published var errorMessage: String = ""
     
@@ -51,7 +51,7 @@ class Manager: ObservableObject {
     
     // MARK: - Public Methods
     
-    /// Loads sleep data and generates AI message
+    /// Loads sleep data and generates artwork
     func loadSleepData() {
         isLoading = true
         errorMessage = ""
@@ -73,7 +73,7 @@ class Manager: ObservableObject {
                     
                     if let sleepData = sleepData {
                         self?.sleepData = sleepData
-                        self?.generateAIMessage(for: sleepData)
+                        self?.generateArtwork(for: sleepData)
                     } else {
                         self?.errorMessage = "Failed to fetch sleep data"
                     }
@@ -89,21 +89,14 @@ class Manager: ObservableObject {
     
     // MARK: - Private Methods
     
-    /// Generates AI message based on sleep data
-    private func generateAIMessage(for sleepData: SleepData) {
-        let hours = Int(sleepData.totalSleepSeconds) / 3600
-        let minutes = (Int(sleepData.totalSleepSeconds) % 3600) / 60
-        
-        let prompt = """
-        My sleep score was \(sleepData.sleepScore). I slept for \(hours) hours and \(minutes) minutes, and I woke up \(sleepData.awakenings) times. 
-        REM Sleep: \(sleepData.formattedRemSleep), Deep Sleep: \(sleepData.formattedDeepSleep), Core Sleep: \(sleepData.formattedCoreSleep).
-        Generate a short, encouraging message for me based on this sleep data.
-        """
-        
-        curatorAI.generateAIMessage(from: prompt) { [weak self] message in
+    /// Generates artwork based on sleep data
+    private func generateArtwork(for sleepData: SleepData) {
+        curatorAI.generateArtwork(from: sleepData) { [weak self] artData in
             DispatchQueue.main.async {
-                self?.aiMessage = message
+                self?.artData = artData
             }
         }
     }
 }
+
+
