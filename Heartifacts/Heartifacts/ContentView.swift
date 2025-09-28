@@ -1088,20 +1088,7 @@ struct GalleryView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 60)
                 
-                Spacer()
-                
-                // Main artifact display
-                TabView(selection: $selectedArtifactIndex) {
-                    ForEach(Array(artifacts.enumerated()), id: \.offset) { index, artifact in
-                        ArtifactPedestalView(artifact: artifact)
-                            .tag(index)
-                    }
-                }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                .frame(maxHeight: .infinity)
-                .animation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.3), value: selectedArtifactIndex)
-                
-                // Artifact info panel
+                // Artifact info panel (moved above)
                 VStack(spacing: 16) {
                     Text(selectedArtifact.name)
                         .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -1119,7 +1106,22 @@ struct GalleryView: View {
                         .animation(.easeInOut(duration: 0.3), value: selectedArtifact.description)
                 }
                 .padding(.horizontal, 32)
-                .padding(.bottom, 120)
+                .padding(.top, 20)
+                
+                Spacer()
+                
+                // Main artifact display
+                TabView(selection: $selectedArtifactIndex) {
+                    ForEach(Array(artifacts.enumerated()), id: \.offset) { index, artifact in
+                        ArtifactPedestalView(artifact: artifact)
+                            .tag(index)
+                    }
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                .frame(maxHeight: .infinity)
+                .animation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.3), value: selectedArtifactIndex)
+                
+                Spacer()
             }
         }
     }
@@ -1205,8 +1207,16 @@ struct ArtifactPedestalView: View {
     let artifact: Artifact
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Artifact on pedestal
+        ZStack(alignment: .bottom) {
+            // Pillar at bottom of screen
+            Image("pillar")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 180, height: 300) // 1.5x larger (120*1.5=180, 200*1.5=300)
+                .shadow(color: .black.opacity(0.3), radius: 15, x: 0, y: 8)
+                .offset(y: 50) // Push it down to bottom half
+            
+            // Artifact floating above pillar
             ZStack {
                 // Glow effect behind artifact
                 Circle()
@@ -1246,14 +1256,7 @@ struct ArtifactPedestalView: View {
                     )
                     .shadow(color: .black.opacity(0.4), radius: 30, x: 0, y: 15)
             }
-            .offset(y: -20)
-            
-            // Pillar below artifact
-            Image("pillar")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 120, height: 200)
-                .shadow(color: .black.opacity(0.3), radius: 15, x: 0, y: 8)
+            .offset(y: -150) // Position artifact above the pillar
         }
     }
 }
