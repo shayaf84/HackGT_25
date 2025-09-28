@@ -21,6 +21,16 @@ struct DALLEImage: Codable {
     let revised_prompt: String?
 }
 
+struct APIErrorResponse: Codable {
+    let error: APIError
+}
+
+struct APIError: Codable {
+    let message: String
+    let type: String?
+    let code: String?
+}
+
 // MARK: - ArtData Model
 struct ArtData {
     let title: String
@@ -133,6 +143,13 @@ class CuratorAI {
     
     /// Makes the actual API call to DALL-E
     private func generateArtwork(prompt: String, category: String, sleepScore: Int, completion: @escaping (ArtData?) -> Void) {
+        // Check if API key is configured
+        if apiKey == "YOUR_API_KEY_HERE" {
+            print("⚠️ API key not configured. Please set up Config.plist with your OpenAI API key.")
+            completion(nil)
+            return
+        }
+        
         let request = DALLERequest(
             model: "dall-e-3",
             prompt: prompt,
@@ -151,7 +168,7 @@ class CuratorAI {
             urlRequest.httpBody = try JSONEncoder().encode(request)
         } catch {
             print("Error encoding request: \(error)")
-            completion(nil)
+                completion(nil) 
             return
         }
         
@@ -168,17 +185,32 @@ class CuratorAI {
                 return
             }
             
+            // Print raw response for debugging
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("Raw API Response: \(responseString)")
+            }
+            
+            // Check HTTP status code
+            if let httpResponse = response as? HTTPURLResponse {
+                print("HTTP Status Code: \(httpResponse.statusCode)")
+                if httpResponse.statusCode != 200 {
+                    print("API returned error status: \(httpResponse.statusCode)")
+                    completion(nil)
+                    return
+                }
+            }
+            
             do {
                 let response = try JSONDecoder().decode(DALLEResponse.self, from: data)
                 
                 if let imageData = response.data.first {
-                    let artData = ArtData(
+                        let artData = ArtData(
                         title: "\(category) Artifact",
                         description: self.createDescription(for: category, sleepScore: sleepScore),
-                        imageURL: imageData.url,
+                            imageURL: imageData.url,
                         sleepScore: sleepScore,
-                        generatedDate: Date()
-                    )
+                            generatedDate: Date()
+                        )
                     
                     DispatchQueue.main.async {
                         completion(artData)
@@ -189,6 +221,12 @@ class CuratorAI {
                 }
             } catch {
                 print("Error decoding response: \(error)")
+                
+                // Try to decode as error response
+                if let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                    print("API Error Response: \(errorResponse)")
+                }
+                
                 completion(nil)
             }
         }.resume()
@@ -202,7 +240,7 @@ class CuratorAI {
                 return "A masterpiece of restful tranquility, capturing the essence of deep, restorative sleep with ethereal beauty and peaceful harmony."
             } else if sleepScore >= 60 {
                 return "A gentle representation of sleep's embrace, showing the delicate balance between rest and wakefulness in soft, flowing forms."
-            } else {
+        } else {
                 return "An abstract exploration of sleep's challenges, revealing the complex patterns of rest and restoration in dreamlike imagery."
             }
         case "Movement":
