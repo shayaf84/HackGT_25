@@ -6,14 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXFileReference section */
-		5AD73DDD2E8828F100CC4990 /* Heartifacts.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Heartifacts.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		5AD73DEB2E8828F300CC4990 /* Heartifacts.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Heartifacts.entitlements"; sourceTree = "<group>"; };
-/* End PBXFileReference section */
-
 /* Begin PBXBuildFile section */
 		5AD73DEC2E8828F300CC4990 /* Heartifacts.entitlements in Resources */ = {isa = PBXBuildFile; fileRef = 5AD73DEB2E8828F300CC4990 /* Heartifacts.entitlements */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		5AD73DDD2E8828F100CC4990 /* Heartifacts.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Heartifacts.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5AD73DEB2E8828F300CC4990 /* Heartifacts.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Heartifacts.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5AD73DDF2E8828F100CC4990 /* Heartifacts */ = {
@@ -34,11 +34,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5A4BC5012E891F1E0026BC95 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				5AD73DEB2E8828F300CC4990 /* Heartifacts.entitlements */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		5AD73DD42E8828F100CC4990 = {
 			isa = PBXGroup;
 			children = (
 				5AD73DDF2E8828F100CC4990 /* Heartifacts */,
 				5AD73DDE2E8828F100CC4990 /* Products */,
+				5A4BC5012E891F1E0026BC95 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
