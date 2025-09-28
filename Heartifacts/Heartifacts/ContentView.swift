@@ -13,9 +13,9 @@ struct ContentView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
-            Text("Heartifacts")
-                .font(.title)
+        VStack(spacing: 16) {
+                Text("Heartifacts")
+                    .font(.title)
             
             // Manager Loading State
             if manager.isLoading {
@@ -175,12 +175,12 @@ struct ContentView: View {
                 )
             }
             
-            // Generated Artwork
-            if let artData = manager.artData {
+            // Sleep Artwork
+            if let artData = manager.sleepArtData {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Museum Artifact")
+                    Text("Sleep Artifact")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.blue)
                     
                     // Artwork Image
                     AsyncImage(url: URL(string: artData.imageURL)) { image in
@@ -191,14 +191,14 @@ struct ContentView: View {
                             .shadow(radius: 8)
                     } placeholder: {
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.gray.opacity(0.3))
+                            .fill(Color.blue.opacity(0.3))
                             .frame(height: 200)
                             .overlay(
                                 ProgressView()
                                     .scaleEffect(1.5)
                             )
                     }
-                    .frame(maxHeight: 500)
+                    .frame(maxHeight: 400)
                     
                     // Artwork Details
                     VStack(alignment: .leading, spacing: 8) {
@@ -216,7 +216,99 @@ struct ContentView: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(.systemBackground))
+                        .fill(Color.blue.opacity(0.1))
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                )
+            }
+            
+            // Movement Artwork
+            if let artData = manager.movementArtData {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Movement Artifact")
+                        .font(.headline)
+                        .foregroundColor(.orange)
+                    
+                    // Artwork Image
+                    AsyncImage(url: URL(string: artData.imageURL)) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .cornerRadius(12)
+                            .shadow(radius: 8)
+                    } placeholder: {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.orange.opacity(0.3))
+                            .frame(height: 200)
+                            .overlay(
+                                ProgressView()
+                                    .scaleEffect(1.5)
+                            )
+                    }
+                    .frame(maxHeight: 400)
+                    
+                    // Artwork Details
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(artData.title)
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        
+                        Text(artData.description)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .padding(.horizontal, 8)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.orange.opacity(0.1))
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                )
+            }
+            
+            // Stress Artwork
+            if let artData = manager.stressArtData {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Stress & Recovery Artifact")
+                        .font(.headline)
+                        .foregroundColor(.green)
+                    
+                    // Artwork Image
+                    AsyncImage(url: URL(string: artData.imageURL)) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .cornerRadius(12)
+                            .shadow(radius: 8)
+                    } placeholder: {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.green.opacity(0.3))
+                            .frame(height: 200)
+                            .overlay(
+                                ProgressView()
+                                    .scaleEffect(1.5)
+                            )
+                    }
+                    .frame(maxHeight: 400)
+                    
+                    // Artwork Details
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(artData.title)
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        
+                        Text(artData.description)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .padding(.horizontal, 8)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.green.opacity(0.1))
                         .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                 )
             }

@@ -73,7 +73,9 @@ class Manager: ObservableObject {
     @Published var stressData: StressData?
     @Published var movementData: MovementData?
     @Published var combinedHealthData: CombinedHealthData?
-    @Published var artData: ArtData?
+    @Published var sleepArtData: ArtData?
+    @Published var movementArtData: ArtData?
+    @Published var stressArtData: ArtData?
     @Published var isLoading: Bool = false
     @Published var errorMessage: String = ""
     
@@ -105,7 +107,12 @@ class Manager: ObservableObject {
                     
                     if let sleepData = sleepData {
                         self?.sleepData = sleepData
-                        self?.generateArtwork(for: sleepData)
+                        // Generate sleep artwork only
+                        self?.curatorAI.generateSleepArtwork(from: sleepData) { artData in
+                            DispatchQueue.main.async {
+                                self?.sleepArtData = artData
+                            }
+                        }
                     } else {
                         self?.errorMessage = "Failed to fetch sleep data"
                     }
@@ -158,10 +165,8 @@ class Manager: ObservableObject {
                         self?.movementData = combinedData.movementData
                         self?.combinedHealthData = combinedData
                         
-                        // Generate artwork if sleep data is available
-                        if let sleepData = combinedData.sleepData {
-                            self?.generateArtwork(for: sleepData)
-                        }
+                        // Generate all types of artwork
+                        self?.generateAllArtwork(combinedData: combinedData)
                     } else {
                         self?.errorMessage = "Failed to fetch health data"
                     }
@@ -177,11 +182,32 @@ class Manager: ObservableObject {
     
     // MARK: - Private Methods
     
-    /// Generates artwork based on sleep data
-    private func generateArtwork(for sleepData: SleepData) {
-        curatorAI.generateArtwork(from: sleepData) { [weak self] artData in
-            DispatchQueue.main.async {
-                self?.artData = artData
+    /// Generates all types of artwork based on available data
+    private func generateAllArtwork(combinedData: CombinedHealthData) {
+        // Generate sleep artwork
+        if let sleepData = combinedData.sleepData {
+            curatorAI.generateSleepArtwork(from: sleepData) { [weak self] artData in
+                DispatchQueue.main.async {
+                    self?.sleepArtData = artData
+                }
+            }
+        }
+        
+        // Generate movement artwork
+        if let movementData = combinedData.movementData {
+            curatorAI.generateMovementArtwork(from: movementData) { [weak self] artData in
+                DispatchQueue.main.async {
+                    self?.movementArtData = artData
+                }
+            }
+        }
+        
+        // Generate stress artwork
+        if let stressData = combinedData.stressData {
+            curatorAI.generateStressArtwork(from: stressData) { [weak self] artData in
+                DispatchQueue.main.async {
+                    self?.stressArtData = artData
+                }
             }
         }
     }
