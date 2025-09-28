@@ -1068,9 +1068,9 @@ struct GalleryView: View {
             VStack(spacing: 0) {
                 // Header
                 HStack {
-                    Text("Gallery")
+            Text("Gallery")
                         .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
                     
                     Spacer()
@@ -1206,25 +1206,6 @@ struct ArtifactPedestalView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Pedestal base
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.white.opacity(0.15),
-                            Color.white.opacity(0.05)
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 280, height: 40)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
-            
             // Artifact on pedestal
             ZStack {
                 // Glow effect behind artifact
@@ -1266,6 +1247,13 @@ struct ArtifactPedestalView: View {
                     .shadow(color: .black.opacity(0.4), radius: 30, x: 0, y: 15)
             }
             .offset(y: -20)
+            
+            // Pillar below artifact
+            Image("pillar")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 120, height: 200)
+                .shadow(color: .black.opacity(0.3), radius: 15, x: 0, y: 8)
         }
     }
 }
