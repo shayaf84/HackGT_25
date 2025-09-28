@@ -149,67 +149,30 @@ class CuratorAI {
     
     // MARK: - Private Methods
     
-    /// Returns a random sophisticated artistic style prompt with Midjourney-level detail
-    private func getRandomArtisticStyle() -> String {
-        let styles = [
-            // Van Gogh Impressionism - Enhanced with Midjourney techniques
-            "Masterpiece oil painting in the style of Vincent van Gogh's late 1880s impressionist period::3, featuring thick, expressive impasto brushstrokes::2, swirling, dynamic patterns::2, and vibrant, saturated color palette::1. Use bold, visible brushwork with rich, saturated colors and intense emotional energy. The painting should have characteristic van Gogh texture and movement, with swirling, flowing lines and dramatic color contrasts. Professional museum-quality execution with authentic artistic techniques --no digital art, no AI-generated appearance, no computer graphics. ",
-            
-            // MOMA Contemporary - Enhanced with Midjourney techniques
-            "Contemporary museum-quality abstract artwork::3, sophisticated geometric composition::2, bold, refined color relationships::2, and professional gallery execution::1. Clean, precise techniques with subtle gradients and polished artistic execution. The piece should have the refined, gallery-ready quality of works found in the Museum of Modern Art, with contemporary artistic sensibilities and modern visual language. Professional museum presentation --no digital art, no AI-generated appearance, no computer graphics. ",
-            
-            // Monet Water Lilies Style - Enhanced with Midjourney techniques
-            "Masterpiece oil painting in the style of Claude Monet's water lilies series::3, featuring soft, atmospheric brushwork::2, gentle color transitions::2, and ethereal, dreamlike quality::1. Use delicate, layered brushstrokes with subtle color harmonies and peaceful, contemplative beauty. The painting should have characteristic Monet softness and natural light, with flowing, organic forms and harmonious color relationships. Professional museum-quality execution --no digital art, no AI-generated appearance, no computer graphics. ",
-            
-            // Rothko Color Field - Enhanced with Midjourney techniques
-            "Masterpiece color field painting in the style of Mark Rothko::3, featuring large, simplified forms::2, rich, contemplative color relationships::2, and meditative, spiritual quality::1. Use smooth, even brushwork with deep, saturated colors and subtle color transitions. The piece should have characteristic Rothko simplicity and emotional depth, with large, flat color areas and sophisticated color harmonies. Professional museum-quality execution --no digital art, no AI-generated appearance, no computer graphics. ",
-            
-            // Kandinsky Abstract Expressionism - Enhanced with Midjourney techniques
-            "Masterpiece abstract expressionist painting in the style of Wassily Kandinsky::3, featuring dynamic, geometric forms::2, bold color relationships::2, and musical, rhythmic composition::1. Use precise, clean brushwork with vibrant, contrasting colors and dynamic movement and energy. The painting should have characteristic Kandinsky geometric abstraction and color theory, with flowing forms and sophisticated color relationships. Professional museum-quality execution --no digital art, no AI-generated appearance, no computer graphics. ",
-            
-            // Georgia O'Keeffe Naturalism - Enhanced with Midjourney techniques
-            "Masterpiece naturalistic painting in the style of Georgia O'Keeffe::3, featuring organic, flowing forms::2, subtle color gradations::2, and intimate, personal scale::1. Use soft, blended brushwork with natural color palettes and organic, living forms. The piece should have characteristic O'Keeffe naturalism and organic abstraction, with biomorphic shapes and subtle, natural color relationships. Professional museum-quality execution --no digital art, no AI-generated appearance, no computer graphics. ",
-            
-            // Jackson Pollock Action Painting - Enhanced with Midjourney techniques
-            "Masterpiece action painting in the style of Jackson Pollock::3, featuring dynamic, gestural marks::2, layered, complex textures::2, and energetic, spontaneous composition::1. Use bold, expressive brushwork with layered, complex color relationships and dynamic movement and energy. The painting should have characteristic Pollock energy and spontaneity, with flowing lines and complex, layered textures. Professional museum-quality execution --no digital art, no AI-generated appearance, no computer graphics. "
-        ]
-        
-        return styles.randomElement() ?? styles[0]
-    }
-    
-    /// Creates an art prompt based on sleep data with Midjourney-level sophistication
+    /// Creates an art prompt based on sleep data
     private func createSleepArtPrompt(from sleepData: SleepData) -> String {
         let hours = Int(sleepData.totalSleepSeconds) / 3600
         let minutes = (Int(sleepData.totalSleepSeconds) % 3600) / 60
         
-        // Select random artistic style
-        let artisticStyle = getRandomArtisticStyle()
+        var prompt = "A museum-quality artwork representing sleep data. Do not use ANY WORDS OR NUMBERS in any part of the image. Make sure the image includes imagery of beds, sheep, clouds, and anything sleep related. "
         
-        var prompt = "Masterpiece sleep-themed artwork::3, museum-quality execution::2, authentic artistic techniques::2, professional gallery presentation::1. "
-        
-        // Add the selected artistic style
-        prompt += artisticStyle
-        
-        // Base the art style on sleep quality with sophisticated visual metaphors and prompt weighting
+        // Base the art style on sleep quality
         if sleepData.sleepScore >= 80 {
-            prompt += "The composition should embody tranquility and restorative energy::3 through flowing, organic forms::2, lush, verdant color palettes::2, and peaceful depth::1. Use deep emerald greens, serene blues, and warm golden accents. Create natural harmony and restorative energy. "
+            prompt += "Create a vibrant, energetic painting with bright colors and flowing lines, repre senting excellent sleep quality. Make lucious landscapes with beautiful scenes and heaven-like qualities. "
         } else if sleepData.sleepScore >= 60 {
-            prompt += "The composition should convey balanced rest::3 through gentle, rhythmic patterns::2, warm, comforting tones::2, and peaceful stability::1. Use soft amber, sage green, and muted lavender hues. Create gentle movement and balanced energy. "
+            prompt += "Create a balanced, harmonious artwork with warm colors and gentle curves, representing good sleep quality. "
         } else {
-            prompt += "The composition should reflect fragmented rest::3 through angular, disjointed forms::2, cooler, muted tones::2, and interrupted flow::1. Use deep burgundy, slate blue, and charcoal gray hues. Create tension and fragmented energy while maintaining artistic beauty. "
+            prompt += "Create a more subdued, contemplative piece with cooler tones and fragmented elements, representing sleep that needs improvement. Add natural disaster elements such as asteroids and volcanoes. DO NOT INCLUDE IMAGES OF DEATH AND UPSETTING IMAGES. "
         }
         
-        // Add specific elements based on sleep data with artistic interpretation and weighting
-        prompt += "Incorporate symbolic elements representing sleep cycles::2: "
-        prompt += "\(hours) hours and \(minutes) minutes of rest::1, "
-        prompt += "\(sleepData.awakenings) moments of consciousness::1, "
-        prompt += "REM sleep (\(sleepData.formattedRemSleep))::1, deep sleep (\(sleepData.formattedDeepSleep))::1, and core sleep (\(sleepData.formattedCoreSleep))::1. "
+        // Add specific elements based on sleep data
+        prompt += "Include visual elements representing: "
+        prompt += "\(hours) hours and \(minutes) minutes of sleep, "
+        prompt += "\(sleepData.awakenings) awakenings, "
+        prompt += "REM sleep (\(sleepData.formattedRemSleep)), deep sleep (\(sleepData.formattedDeepSleep)), and core sleep (\(sleepData.formattedCoreSleep)). "
         
-        prompt += "Professional museum-quality execution::2, authentic artistic techniques::2, natural brushwork::1, genuine artistic expression::1. "
-        prompt += "Sophisticated color theory::1: warmer, vibrant tones for restorative sleep, cooler, subdued tones for fragmented rest. "
-        
-        // Add negative prompts to avoid AI-generated look
-        prompt += "--no digital art, no AI-generated appearance, no computer graphics, no digital painting, no synthetic textures, no artificial lighting, no perfect symmetry, no overly smooth surfaces, no digital brushstrokes, no computer-generated patterns, no artificial colors, no digital gradients, no pixelated elements, no vector graphics, no 3D rendering, no digital filters, no computer-aided design, no artificial intelligence, no machine learning, no algorithmic art, no procedural generation, no digital manipulation, no computer graphics, no CGI, no digital effects, no artificial intelligence, no machine learning, no algorithmic art, no procedural generation, no digital manipulation, no computer graphics, no CGI, no digital effects. "
+        prompt += "The artwork should be museum-worthy and suitable for display in a contemporary or modern art museum. Make the art more minimalistic without too much complexity and do not use words or nubmers or other written elements. "
+        prompt += "Use artistic techniques like brushstrokes, color gradients, and symbolic representations of sleep stages. Use redder, more orange hues for a lack of sleep and green hues for good sleep "
         
         return prompt
     }
@@ -248,39 +211,30 @@ class CuratorAI {
         return description
     }
     
-    /// Creates an art prompt based on movement data with Midjourney-level sophistication
+    /// Creates an art prompt based on movement data
     private func createMovementArtPrompt(from movementData: MovementData) -> String {
-        // Select random artistic style
-        let artisticStyle = getRandomArtisticStyle()
+        var prompt = "A museum-quality artwork representing movement and activity data. Do not use ANY WORDS OR NUMBERS in any part of the image. Make sure the image includes imagery of running, walking, stairs, energy, and anything movement related. "
         
-        var prompt = "Masterpiece movement-themed artwork::3, museum-quality execution::2, authentic artistic techniques::2, professional gallery presentation::1. "
-        
-        // Add the selected artistic style
-        prompt += artisticStyle
-        
-        // Base the art style on movement quality with sophisticated visual metaphors and prompt weighting
+        // Base the art style on movement quality
         if movementData.movementScore >= 80 {
-            prompt += "The composition should embody dynamic energy and vitality::3 through bold, sweeping forms::2, powerful visual rhythms::2, and athletic grace::1. Use vibrant, saturated colors with electric blues, energetic oranges, and invigorating greens. Create unstoppable momentum and dynamic energy. "
+            prompt += "Create a vibrant, energetic painting with bright colors and dynamic movement, representing excellent activity levels. Show powerful athletes, mountain climbers, and energetic scenes with flowing motion and strength. "
         } else if movementData.movementScore >= 60 {
-            prompt += "The composition should convey steady, purposeful movement::3 through balanced, rhythmic patterns::2, warm, encouraging tones::2, and consistent progress::1. Use harmonious color combinations with gentle blues, warm golds, and supportive greens. Create balanced energy and healthy activity. "
+            prompt += "Create a balanced, harmonious artwork with warm colors and gentle movement, representing good activity levels. Show people walking, light exercise, and moderate activity with smooth, flowing lines. "
         } else {
-            prompt += "The composition should reflect limited movement::3 through restrained, contained forms::2, muted, introspective tones::2, and potential energy::1. Use subdued color palettes with soft grays, muted purples, and gentle earth tones. Create contemplative energy and artistic dignity. "
+            prompt += "Create a more subdued, static piece with cooler tones and limited movement, representing activity that needs improvement. Show sedentary scenes, stillness, and lack of motion with fragmented, disconnected elements. "
         }
         
-        // Add specific elements based on movement data with artistic interpretation and weighting
-        prompt += "Incorporate symbolic elements representing physical activity::2: "
-        prompt += "\(movementData.stepCount) steps of progress::1, "
-        prompt += "\(movementData.standHours) hours of engagement::1, "
-        prompt += "\(movementData.formattedActiveEnergy) of energy expended::1, "
-        prompt += "\(movementData.exerciseMinutes) minutes of dedicated effort::1, "
-        prompt += "\(movementData.formattedWalkingDistance) of distance covered::1, and "
-        prompt += "\(movementData.flightsClimbed) ascents achieved::1. "
+        // Add specific elements based on movement data
+        prompt += "Include visual elements representing: "
+        prompt += "\(movementData.stepCount) steps taken, "
+        prompt += "\(movementData.standHours) hours standing, "
+        prompt += "\(movementData.formattedActiveEnergy) burned, "
+        prompt += "\(movementData.exerciseMinutes) minutes of exercise, "
+        prompt += "\(movementData.formattedWalkingDistance) walked, and "
+        prompt += "\(movementData.flightsClimbed) flights climbed. "
         
-        prompt += "Professional museum-quality execution::2, authentic artistic techniques::2, natural brushwork::1, genuine artistic expression::1. "
-        prompt += "Sophisticated color theory::1: vibrant, energetic tones for high activity, balanced, harmonious tones for moderate activity, subdued, contemplative tones for low activity. "
-        
-        // Add negative prompts to avoid AI-generated look
-        prompt += "--no digital art, no AI-generated appearance, no computer graphics, no digital painting, no synthetic textures, no artificial lighting, no perfect symmetry, no overly smooth surfaces, no digital brushstrokes, no computer-generated patterns, no artificial colors, no digital gradients, no pixelated elements, no vector graphics, no 3D rendering, no digital filters, no computer-aided design, no artificial intelligence, no machine learning, no algorithmic art, no procedural generation, no digital manipulation, no computer graphics, no CGI, no digital effects, no artificial intelligence, no machine learning, no algorithmic art, no procedural generation, no digital manipulation, no computer graphics, no CGI, no digital effects. "
+        prompt += "The artwork should be museum-worthy and suitable for display in a contemporary or modern art museum. Make the art more minimalistic without too much complexity and do not use words or nubmers or other written elements. "
+        prompt += "Use artistic techniques like brushstrokes, color gradients, and symbolic representations of movement and energy. Use green and blue hues for good movement and red/orange hues for poor movement."
         
         return prompt
     }
