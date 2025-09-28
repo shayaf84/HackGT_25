@@ -37,50 +37,59 @@ struct SleepData {
     }
 }
 
+// MARK: - StressData Model
+struct StressData {
+    let heartRateVariability: Double? // ms
+    let restingHeartRate: Double? // bpm
+    let heartRateSamples: [HKQuantitySample]
+    let mindfulnessMinutes: Double? // minutes
+    let stressLevel: Double? // 0-10 scale if available
+    let collectionDate: Date
+}
+
 // MARK: - MovementData Model
 struct MovementData {
-    let stepCount: Int
-    let standHours: Int
-    let activeEnergyBurned: Double // in kilocalories
-    let exerciseMinutes: Int
-    let walkingDistance: Double // in meters
-    let flightsClimbed: Int
-    let movementScore: Int
-    
-    // Helper computed properties for display
-    var formattedActiveEnergy: String {
-        return String(format: "%.0f kcal", activeEnergyBurned)
-    }
-    
-    var formattedWalkingDistance: String {
-        let kilometers = walkingDistance / 1000
-        return String(format: "%.2f km", kilometers)
-    }
+    let steps: Int
+    let activeEnergyBurned: Double? // kcal
+    let exerciseMinutes: Double? // minutes
+    let standHours: Int? // hours
+    let walkingDistance: Double? // meters
+    let flightsClimbed: Int?
+    let collectionDate: Date
+}
+
+// MARK: - CombinedHealthData Model
+struct CombinedHealthData {
+    let sleepData: SleepData?
+    let stressData: StressData?
+    let movementData: MovementData?
+    let collectionDate: Date
 }
 
 // MARK: - Manager Class
 class Manager: ObservableObject {
     // MARK: - Published Properties
     @Published var sleepData: SleepData?
+    @Published var stressData: StressData?
     @Published var movementData: MovementData?
-    @Published var sleepArtData: ArtData?
-    @Published var movementArtData: ArtData?
+    @Published var combinedHealthData: CombinedHealthData?
+    @Published var artData: ArtData?
     @Published var isLoading: Bool = false
     @Published var errorMessage: String = ""
     
     // MARK: - Private Properties
-    private let sleepProcessor = Sleep()
+    private let healthDataProcessor = HealthDataProcessor()
     private let curatorAI = CuratorAI()
     
     // MARK: - Public Methods
     
-    /// Loads sleep and movement data and generates artwork
+    /// Loads sleep data and generates artwork
     func loadSleepData() {
         isLoading = true
         errorMessage = ""
         
         // Request HealthKit authorization first
-        sleepProcessor.requestHealthAuthorization { [weak self] success in
+        healthDataProcessor.requestHealthAuthorization { [weak self] success in
             guard success else {
                 DispatchQueue.main.async {
                     self?.isLoading = false
@@ -90,24 +99,70 @@ class Manager: ObservableObject {
             }
             
             // Fetch sleep data
-            self?.sleepProcessor.fetchSleepData { sleepData in
-                DispatchQueue.main.async {
-                    if let sleepData = sleepData {
-                        self?.sleepData = sleepData
-                        self?.generateSleepArtwork(for: sleepData)
-                    }
-                }
-            }
-            
-            // Fetch movement data
-            self?.sleepProcessor.fetchMovementData { movementData in
+            self?.healthDataProcessor.fetchSleepData { sleepData in
                 DispatchQueue.main.async {
                     self?.isLoading = false
                     
-                    if let movementData = movementData {
-                        self?.movementData = movementData
-                        self?.generateMovementArtwork(for: movementData)
-                    } else if self?.sleepData == nil {
+                    if let sleepData = sleepData {
+                        self?.sleepData = sleepData
+                        self?.generateArtwork(for: sleepData)
+                    } else {
+                        self?.errorMessage = "Failed to fetch sleep data"
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Loads stress data
+    func loadStressData() {
+        healthDataProcessor.fetchStressData { [weak self] stressData in
+            DispatchQueue.main.async {
+                self?.stressData = stressData
+            }
+        }
+    }
+    
+    /// Loads movement data
+    func loadMovementData() {
+        healthDataProcessor.fetchMovementData { [weak self] movementData in
+            DispatchQueue.main.async {
+                self?.movementData = movementData
+            }
+        }
+    }
+    
+    /// Loads all health data (sleep, stress, movement)
+    func loadAllHealthData() {
+        isLoading = true
+        errorMessage = ""
+        
+        // Request HealthKit authorization for all data types
+        healthDataProcessor.requestHealthAuthorization { [weak self] success in
+            guard success else {
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                    self?.errorMessage = "Failed to authorize HealthKit access"
+                }
+                return
+            }
+            
+            // Fetch all health data in parallel
+            self?.healthDataProcessor.fetchAllHealthData { combinedData in
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                    
+                    if let combinedData = combinedData {
+                        self?.sleepData = combinedData.sleepData
+                        self?.stressData = combinedData.stressData
+                        self?.movementData = combinedData.movementData
+                        self?.combinedHealthData = combinedData
+                        
+                        // Generate artwork if sleep data is available
+                        if let sleepData = combinedData.sleepData {
+                            self?.generateArtwork(for: sleepData)
+                        }
+                    } else {
                         self?.errorMessage = "Failed to fetch health data"
                     }
                 }
@@ -117,25 +172,16 @@ class Manager: ObservableObject {
     
     /// Refreshes the data
     func refreshData() {
-        loadSleepData()
+        loadAllHealthData()
     }
     
     // MARK: - Private Methods
     
     /// Generates artwork based on sleep data
-    private func generateSleepArtwork(for sleepData: SleepData) {
-        curatorAI.generateSleepArtwork(from: sleepData) { [weak self] artData in
+    private func generateArtwork(for sleepData: SleepData) {
+        curatorAI.generateArtwork(from: sleepData) { [weak self] artData in
             DispatchQueue.main.async {
-                self?.sleepArtData = artData
-            }
-        }
-    }
-    
-    /// Generates artwork based on movement data
-    private func generateMovementArtwork(for movementData: MovementData) {
-        curatorAI.generateMovementArtwork(from: movementData) { [weak self] artData in
-            DispatchQueue.main.async {
-                self?.movementArtData = artData
+                self?.artData = artData
             }
         }
     }
