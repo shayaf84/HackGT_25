@@ -1244,6 +1244,12 @@ struct GalleryView: View {
     
     @State private var selectedArtifactIndex = 0
     
+    private func updateSelectedIndexIfNeeded() {
+        if selectedArtifactIndex >= artifacts.count && !artifacts.isEmpty {
+            selectedArtifactIndex = 0
+        }
+    }
+    
     private var artifacts: [Artifact] {
         var generatedArtifacts: [Artifact] = []
         
@@ -1284,10 +1290,18 @@ struct GalleryView: View {
     }
     
     private var selectedArtifact: Artifact {
-        artifacts.isEmpty ? Artifact(name: "No Artifacts", description: "Generate health data to create artifacts", imageName: "museum") : artifacts[selectedArtifactIndex]
+        if artifacts.isEmpty {
+            return Artifact(name: "No Artifacts", description: "Generate health data to create artifacts", imageName: "museum")
+        } else if selectedArtifactIndex < artifacts.count {
+            return artifacts[selectedArtifactIndex]
+        } else {
+            return artifacts[0] // Fallback to first artifact
+        }
     }
     
     var body: some View {
+        let _ = updateSelectedIndexIfNeeded() // Ensure index is valid
+        
         ZStack {
             // Parallax museum background
             ParallaxBackgroundView(selectedIndex: selectedArtifactIndex)

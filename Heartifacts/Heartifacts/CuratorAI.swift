@@ -43,22 +43,8 @@ struct ArtData {
 // MARK: - CuratorAI Class
 class CuratorAI {
     // MARK: - Private Properties
-    private let apiKey: String
+    private let apiKey = "INSERT API KEY HERE"
     private let dalleURL = URL(string: "https://api.openai.com/v1/images/generations")!
-    
-    // MARK: - Initialization
-    init() {
-        // Load API key from Config.plist
-        if let path = Bundle.main.path(forResource: "Config", ofType: "plist"),
-           let plist = NSDictionary(contentsOfFile: path),
-           let key = plist["OpenAI_API_Key"] as? String {
-            self.apiKey = key
-        } else {
-            // Fallback for development - replace with your actual key
-            self.apiKey = "YOUR_API_KEY_HERE"
-            print("⚠️ WARNING: Could not load API key from Config.plist. Using placeholder.")
-        }
-    }
     
     // MARK: - Public Methods (Called by Manager)
     
@@ -143,13 +129,6 @@ class CuratorAI {
     
     /// Makes the actual API call to DALL-E
     private func generateArtwork(prompt: String, category: String, sleepScore: Int, completion: @escaping (ArtData?) -> Void) {
-        // Check if API key is configured
-        if apiKey == "YOUR_API_KEY_HERE" {
-            print("⚠️ API key not configured. Please set up Config.plist with your OpenAI API key.")
-            completion(nil)
-            return
-        }
-        
         let request = DALLERequest(
             model: "dall-e-3",
             prompt: prompt,
@@ -203,20 +182,20 @@ class CuratorAI {
             do {
                 let response = try JSONDecoder().decode(DALLEResponse.self, from: data)
                 
-                if let imageData = response.data.first {
-                        let artData = ArtData(
+                if !response.data.isEmpty, let imageData = response.data.first {
+                    let artData = ArtData(
                         title: "\(category) Artifact",
                         description: self.createDescription(for: category, sleepScore: sleepScore),
-                            imageURL: imageData.url,
+                        imageURL: imageData.url,
                         sleepScore: sleepScore,
-                            generatedDate: Date()
-                        )
+                        generatedDate: Date()
+                    )
                     
                     DispatchQueue.main.async {
                         completion(artData)
                     }
                 } else {
-                    print("No image data in response")
+                    print("No image data in response - data array is empty")
                     completion(nil)
                 }
             } catch {

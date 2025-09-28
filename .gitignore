@@ -68,5 +68,4 @@ fastlane/test_output
 *.env
 .env
 API_KEYS.plist
-Config.plist
 secrets.plist
