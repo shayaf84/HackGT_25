@@ -12,7 +12,8 @@ struct ContentView: View {
     private let healthStore = HKHealthStore()
 
     var body: some View {
-        VStack(spacing: 16) {
+        ScrollView {
+            VStack(spacing: 16) {
             Text("Heartifacts")
                 .font(.title)
             
@@ -39,6 +40,139 @@ struct ContentView: View {
                     Text("Awakenings: \(sleepData.awakenings)")
                     Text("Sleep Score: \(sleepData.sleepScore)")
                 }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.blue.opacity(0.1))
+                )
+            }
+            
+            // Manager Stress Data
+            if let stressData = manager.stressData {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Stress & Recovery Data:")
+                        .font(.headline)
+                    
+                    if let hrv = stressData.heartRateVariability {
+                        Text("Heart Rate Variability: \(String(format: "%.1f", hrv)) ms")
+                            .foregroundColor(hrv > 30 ? .green : hrv > 20 ? .orange : .red)
+                    } else {
+                        Text("Heart Rate Variability: Not available")
+                            .foregroundColor(.gray)
+                    }
+                    
+                    if let restingHR = stressData.restingHeartRate {
+                        Text("Resting Heart Rate: \(String(format: "%.0f", restingHR)) bpm")
+                    }
+                    
+                    if let mindfulness = stressData.mindfulnessMinutes {
+                        Text("Mindfulness: \(String(format: "%.1f", mindfulness)) min")
+                    }
+                    
+                    Text("Heart Rate Samples: \(stressData.heartRateSamples.count)")
+                    
+                    if let stressLevel = stressData.stressLevel {
+                        Text("Stress Level: \(String(format: "%.1f", stressLevel))/10")
+                    } else {
+                        Text("Stress Level: Not available")
+                    }
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.green.opacity(0.1))
+                )
+            }
+            
+            // Manager Movement Data
+            if let movementData = manager.movementData {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Movement Data:")
+                        .font(.headline)
+                    
+                    Text("Steps: \(movementData.steps)")
+                    
+                    if let activeEnergy = movementData.activeEnergyBurned {
+                        Text("Active Energy: \(String(format: "%.0f", activeEnergy)) kcal")
+                    }
+                    
+                    if let exerciseMinutes = movementData.exerciseMinutes {
+                        Text("Exercise: \(String(format: "%.0f", exerciseMinutes)) min")
+                    }
+                    
+                    if let standHours = movementData.standHours {
+                        Text("Stand Hours: \(standHours)")
+                    }
+                    
+                    if let walkingDistance = movementData.walkingDistance {
+                        Text("Walking Distance: \(String(format: "%.2f", walkingDistance/1000)) km")
+                    }
+                    
+                    if let flights = movementData.flightsClimbed {
+                        Text("Flights Climbed: \(flights)")
+                    }
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.orange.opacity(0.1))
+                )
+            }
+            
+            // Combined Health Data Summary
+            if let combinedData = manager.combinedHealthData {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Health Summary:")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                    
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("Sleep Score")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("\(combinedData.sleepData?.sleepScore ?? 0)")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(combinedData.sleepData?.sleepScore ?? 0 >= 80 ? .green : .orange)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .trailing) {
+                            Text("Steps")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("\(combinedData.movementData?.steps ?? 0)")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .trailing) {
+                            Text("HRV")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            if let hrv = combinedData.stressData?.heartRateVariability {
+                                Text("\(String(format: "%.0f", hrv))")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(hrv > 30 ? .green : .orange)
+                            } else {
+                                Text("N/A")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.purple.opacity(0.1))
+                )
             }
             
             // Generated Artwork
@@ -87,13 +221,18 @@ struct ContentView: View {
                 )
             }
             
-            // Steps Data
+            // Legacy Steps Data (keeping for comparison)
             VStack(alignment: .leading, spacing: 8) {
-                Text("Steps:")
+                Text("Legacy Steps Data:")
                     .font(.headline)
                 Text("Today: \(stepToday)")
                 Text("Last 24h: \(step24h)")
             }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.gray.opacity(0.1))
+            )
             
             // Debug Text
             if !debugText.isEmpty {
@@ -113,10 +252,11 @@ struct ContentView: View {
                 manager.refreshData()
                 requestHealthKitAuth()
             }
+            }
+            .padding()
         }
-        .padding()
         .onAppear {
-            manager.loadSleepData()
+            manager.loadAllHealthData()
             requestHealthKitAuth()
         }
     }
