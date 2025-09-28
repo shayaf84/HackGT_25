@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5AD73DEC2E8828F300CC4990 /* Heartifacts.entitlements in Resources */ = {isa = PBXBuildFile; fileRef = 5AD73DEB2E8828F300CC4990 /* Heartifacts.entitlements */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -123,7 +122,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5AD73DEC2E8828F300CC4990 /* Heartifacts.entitlements in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -270,7 +268,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHandsTrackingUsageDescription = "";
+				INFOPLIST_KEY_NSHandsTrackingUsageDescription = "This app does not use hand tracking features.";
 				INFOPLIST_KEY_NSHealthClinicalHealthRecordsShareUsageDescription = "Visualizing health kit data";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Visualizing health kit data";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Visualizing health kit data";
@@ -319,7 +317,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHandsTrackingUsageDescription = "";
+				INFOPLIST_KEY_NSHandsTrackingUsageDescription = "This app does not use hand tracking features.";
 				INFOPLIST_KEY_NSHealthClinicalHealthRecordsShareUsageDescription = "Visualizing health kit data";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Visualizing health kit data";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Visualizing health kit data";

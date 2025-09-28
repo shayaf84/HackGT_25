@@ -211,10 +211,6 @@ struct ContentView: View {
                 }
                 .tag(1)
 
-                    TabItemView {
-                    ProfileView()
-                }
-                .tag(2)
             }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .ignoresSafeArea()
@@ -238,68 +234,87 @@ struct HomeView: View {
     @ObservedObject var manager: Manager
     
     var body: some View {
-        ZStack(alignment: .topLeading) {
+        ZStack {
             Image("museum")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
 
-            LinearGradient(gradient: Gradient(colors: [Color.black.opacity(0.6), Color.clear]), startPoint: .top, endPoint: .center)
-                .frame(height: 240)
+            LinearGradient(gradient: Gradient(colors: [Color.black.opacity(0.7), Color.black.opacity(0.3)]), startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 16) {
-            Text("Heartifacts")
-                .font(.system(size: 44, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-                .padding(.top, 72)
-                .padding(.leading, 28)
-                
-                // Health Data Summary
-                if manager.isLoading {
-                    HStack {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        Text("Loading your health data...")
-                .foregroundColor(.white)
-                            .font(.system(size: 16, weight: .medium))
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Header
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Heartifacts")
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding(.top, 20)
+                        
+                        Text("Your Health Dashboard")
+                            .font(.system(size: 18, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.8))
                     }
-                    .padding(.leading, 28)
-                } else if !manager.errorMessage.isEmpty {
-                    Text("Error: \(manager.errorMessage)")
-                        .foregroundColor(.red)
-                        .font(.system(size: 16, weight: .medium))
-                        .padding(.leading, 28)
-                } else if let combinedData = manager.combinedHealthData {
-                    HealthSummaryCard(combinedData: combinedData)
+                    .padding(.horizontal, 28)
+                    
+                    // Health Data Summary
+                    if manager.isLoading {
+                        VStack(spacing: 16) {
+                            HStack {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                Text("Loading your health data...")
+                                    .foregroundColor(.white)
+                                    .font(.system(size: 16, weight: .medium))
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
                         .padding(.horizontal, 28)
-                }
-                
-                // Refresh Button
-                Button(action: {
-                    manager.refreshData()
-                }) {
-                    HStack {
-                        Image(systemName: "arrow.clockwise")
-                        Text("Refresh Data")
+                    } else if !manager.errorMessage.isEmpty {
+                        VStack(spacing: 16) {
+                            Text("Error: \(manager.errorMessage)")
+                                .foregroundColor(.red)
+                                .font(.system(size: 16, weight: .medium))
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 28)
+                    } else if let combinedData = manager.combinedHealthData {
+                        HealthSummaryCard(combinedData: combinedData)
+                            .padding(.horizontal, 28)
                     }
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-        .background(
-                        Capsule()
-                            .fill(.ultraThinMaterial)
-                .overlay(
-                                Capsule()
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                            )
-                    )
+                    
+                    // Refresh Button
+                    Button(action: {
+                        manager.refreshData()
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Refresh Data")
+                        }
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .padding(.horizontal, 28)
+                    .padding(.top, 8)
+                    
+                    // Add some bottom padding for scroll
+                    Spacer(minLength: 100)
                 }
-                .padding(.leading, 28)
-                .padding(.top, 8)
             }
         }
+        .ignoresSafeArea(.all, edges: .top)
     }
 }
 
@@ -308,63 +323,178 @@ struct HealthSummaryCard: View {
     let combinedData: CombinedHealthData
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Today's Health Summary")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+        VStack(spacing: 0) {
+            // Header
+                HStack {
+                Text("Today's Health Summary")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundColor(.white)
-
-            HStack(spacing: 20) {
-                // Sleep Score
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Sleep")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.8))
-                    Text("\(combinedData.sleepData?.sleepScore ?? 0)")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.blue)
-                    }
-            
             Spacer()
-            
-                // Steps
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Steps")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.8))
-                    Text("\(combinedData.movementData?.steps ?? 0)")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.green)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+
+            // Health Data Sections
+            VStack(spacing: 20) {
+                // Sleep Data Section
+                if let sleepData = combinedData.sleepData {
+                    HealthSectionCard(
+                        title: "Sleep",
+                        icon: "moon.fill",
+                        color: .blue,
+                        data: [
+                            HealthMetric(label: "Score", value: "\(sleepData.sleepScore)", unit: ""),
+                            HealthMetric(label: "Total", value: sleepData.formattedTotalSleep, unit: ""),
+                            HealthMetric(label: "Awakenings", value: "\(sleepData.awakenings)", unit: "")
+                        ]
+                    )
                 }
-                
-                Spacer()
-                
-                // HRV
-            VStack(alignment: .leading, spacing: 4) {
-                    Text("HRV")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.8))
-                    if let hrv = combinedData.stressData?.heartRateVariability {
-                        Text("\(String(format: "%.0f", hrv))")
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
-                            .foregroundColor(.orange)
-                    } else {
-                        Text("N/A")
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
-                            .foregroundColor(.gray)
+
+                // Movement Data Section
+                if let movementData = combinedData.movementData {
+                    HealthSectionCard(
+                        title: "Movement",
+                        icon: "figure.walk",
+                        color: .green,
+                        data: createMovementMetrics(from: movementData)
+                    )
+                }
+
+                // Recovery Data Section
+                if let stressData = combinedData.stressData {
+                    let recoveryMetrics = createRecoveryMetrics(from: stressData)
+                    if !recoveryMetrics.isEmpty {
+                        HealthSectionCard(
+                            title: "Recovery",
+                            icon: "heart.fill",
+                            color: .red,
+                            data: recoveryMetrics
+                        )
                     }
                 }
             }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
         }
-        .padding(20)
                         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 20)
                 .fill(.ultraThinMaterial)
                                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
                 )
         )
     }
+}
+
+struct HealthMetric {
+    let label: String
+    let value: String
+    let unit: String
+}
+
+struct HealthSectionCard: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let data: [HealthMetric]
+
+    var body: some View {
+        VStack(spacing: 16) {
+            // Section Header
+                HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(color)
+                    Text(title)
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
+            }
+            
+            // Metrics Grid
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 12) {
+                ForEach(Array(data.enumerated()), id: \.offset) { index, metric in
+                    VStack(spacing: 6) {
+                        Text(metric.label)
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                        
+                        HStack(alignment: .lastTextBaseline, spacing: 2) {
+                            Text(metric.value)
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .foregroundColor(color)
+                            
+                            if !metric.unit.isEmpty {
+                                Text(metric.unit)
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+                    .padding(.horizontal, 8)
+        .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(color.opacity(0.1))
+                .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(color.opacity(0.2), lineWidth: 1)
+                            )
+                    )
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(color.opacity(0.2), lineWidth: 1)
+                )
+        )
+    }
+}
+
+// MARK: - Helper Functions
+private func createMovementMetrics(from movementData: MovementData) -> [HealthMetric] {
+    var metrics: [HealthMetric] = [
+        HealthMetric(label: "Steps", value: "\(movementData.steps)", unit: "")
+    ]
+    
+    if let energy = movementData.activeEnergyBurned {
+        metrics.append(HealthMetric(label: "Energy", value: "\(String(format: "%.0f", energy))", unit: "kcal"))
+    }
+    if let exercise = movementData.exerciseMinutes {
+        metrics.append(HealthMetric(label: "Exercise", value: "\(String(format: "%.0f", exercise))", unit: "min"))
+    }
+    if let flights = movementData.flightsClimbed {
+        metrics.append(HealthMetric(label: "Flights", value: "\(flights)", unit: ""))
+    }
+    
+    return metrics
+}
+
+private func createRecoveryMetrics(from stressData: StressData) -> [HealthMetric] {
+    var metrics: [HealthMetric] = []
+    
+    if let hrv = stressData.heartRateVariability {
+        metrics.append(HealthMetric(label: "HRV", value: "\(String(format: "%.0f", hrv))", unit: "ms"))
+    }
+    if let restingHR = stressData.restingHeartRate {
+        metrics.append(HealthMetric(label: "Resting HR", value: "\(String(format: "%.0f", restingHR))", unit: "bpm"))
+    }
+    if let mindfulness = stressData.mindfulnessMinutes {
+        metrics.append(HealthMetric(label: "Mindfulness", value: "\(String(format: "%.0f", mindfulness))", unit: "min"))
+    }
+    
+    return metrics
 }
 
 private struct HeroHeaderSection: View {
@@ -374,7 +504,7 @@ private struct HeroHeaderSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            ZStack {
+                        ZStack {
                 AnimatedAuroraBackground()
                     .frame(height: 200)
                     .clipShape(RoundedRectangle(cornerRadius: 40, style: .continuous))
@@ -387,7 +517,7 @@ private struct HeroHeaderSection: View {
 
                     Text(subtitle)
                         .font(.system(size: 15, weight: .medium, design: .rounded))
-                    .foregroundColor(HeartifactsTheme.quietLabel)
+                        .foregroundColor(HeartifactsTheme.quietLabel)
             }
                 .padding(.leading, 24)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -442,8 +572,7 @@ struct BottomNavigationBar: View {
     
     private let tabs = [
         NavigationTab(icon: "house.fill", title: "Home", tag: 0),
-        NavigationTab(icon: "photo.on.rectangle", title: "Gallery", tag: 1),
-        NavigationTab(icon: "person.fill", title: "Profile", tag: 2)
+        NavigationTab(icon: "photo.on.rectangle", title: "Gallery", tag: 1)
     ]
     
     var body: some View {
@@ -557,9 +686,9 @@ struct GalleryView: View {
         // Fallback artifacts if no generated artwork is available
         if generatedArtifacts.isEmpty {
             return [
-                Artifact(name: "Sleep Artifact", description: "Your personalized sleep visualization", imageName: "museum"),
-                Artifact(name: "Movement Artifact", description: "Your activity pattern artwork", imageName: "museum"),
-                Artifact(name: "Stress Artifact", description: "Your stress and recovery visualization", imageName: "museum")
+                Artifact(name: "Sleep Artifact", description: "Turn your dreams into art 😴", imageName: "museum"),
+                Artifact(name: "Activity Artifact", description: "The more you move, the more you create 💃", imageName: "museum"),
+                Artifact(name: "Stress Artifact", description: "Don't stress. Enjoy this art 🖼️", imageName: "museum")
             ]
         }
         
@@ -862,209 +991,6 @@ struct ArtifactPedestalView: View {
     }
 }
 
-// MARK: - Profile View
-struct ProfileView: View {
-    @State private var userName = "Museum Curator"
-    @State private var userLevel = 12
-    @State private var totalArtifacts = 47
-    @State private var achievements = [
-        Achievement(title: "First Discovery", description: "Found your first artifact", isUnlocked: true),
-        Achievement(title: "Explorer", description: "Visited 10 different exhibits", isUnlocked: true),
-        Achievement(title: "Scholar", description: "Completed 50 research tasks", isUnlocked: false),
-        Achievement(title: "Master Curator", description: "Managed 100 artifacts", isUnlocked: false)
-    ]
-    
-    private var unlockedAchievements: Int {
-        achievements.filter { $0.isUnlocked }.count
-    }
-    
-    var body: some View {
-        ZStack {
-            // Background
-            AppBackground()
-            
-            // Dark overlay
-            Color.black.opacity(0.3)
-                .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Hero Header
-                    HeroHeaderSection(
-                        title: "Profile",
-                        subtitle: "Museum Curator",
-                        caption: "Level \(userLevel) • \(unlockedAchievements) achievements"
-                    )
-                    
-                    // Profile Card
-                    GlassCard {
-                        VStack(spacing: 20) {
-                            // Profile Avatar
-                            ZStack {
-                                Circle()
-                                    .fill(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [
-                                                HeartifactsTheme.accent,
-                                                HeartifactsTheme.accent.opacity(0.7)
-                                            ]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    .frame(width: 80, height: 80)
-                                
-                                Image(systemName: "person.crop.circle.fill")
-                                    .font(.system(size: 40))
-                                    .foregroundColor(.white)
-                            }
-                            
-                            VStack(spacing: 8) {
-                                Text(userName)
-                                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
-                                
-                                Text("Level \(userLevel)")
-                                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                                    .foregroundColor(HeartifactsTheme.accent)
-                            }
-                        }
-                        .padding(24)
-                    }
-                    
-                    // Stats Section
-                    VStack(spacing: 16) {
-                        HStack(spacing: 16) {
-                            StatCard(
-                                title: "\(totalArtifacts)",
-                                subtitle: "Artifacts",
-                                color: HeartifactsTheme.accent
-                            )
-                            
-                            StatCard(
-                                title: "23",
-                                subtitle: "Days Active",
-                                color: .green
-                            )
-                            
-                            StatCard(
-                                title: "\(unlockedAchievements)",
-                                subtitle: "Achievements",
-                                color: .orange
-                            )
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // Achievements Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Text("Achievements")
-                                .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white)
-                            
-                            Spacer()
-                            
-                            Text("\(unlockedAchievements)/\(achievements.count)")
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
-                                .foregroundColor(HeartifactsTheme.accent)
-                        }
-                        .padding(.horizontal, 20)
-                        
-                        VStack(spacing: 12) {
-                            ForEach(achievements) { achievement in
-                                AchievementRow(achievement: achievement)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                    }
-                    
-                    Spacer(minLength: 100)
-                }
-                .padding(.top, 60)
-            }
-        }
-    }
-}
-
-struct Achievement: Identifiable {
-    let id = UUID()
-    let title: String
-    let description: String
-    let isUnlocked: Bool
-}
-
-struct StatCard: View {
-    let title: String
-    let subtitle: String
-    let color: Color
-    
-    var body: some View {
-        GlassCard {
-            VStack(spacing: 8) {
-                Text(title)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundColor(color)
-                
-                Text(subtitle)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.8))
-            }
-            .padding(16)
-        }
-    }
-}
-
-struct AchievementRow: View {
-    let achievement: Achievement
-    
-    var body: some View {
-        GlassCard {
-            HStack(spacing: 16) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            achievement.isUnlocked ?
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color.yellow, Color.orange]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ) :
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color.white.opacity(0.1), Color.white.opacity(0.05)]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 32, height: 32)
-                    
-                    Image(systemName: achievement.isUnlocked ? "star.fill" : "star")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(achievement.isUnlocked ? .white : .white.opacity(0.5))
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(achievement.title)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundColor(achievement.isUnlocked ? .white : .white.opacity(0.6))
-                    
-                    Text(achievement.description)
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                
-                Spacer()
-                
-                if achievement.isUnlocked {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(.green)
-                }
-            }
-            .padding(16)
-        }
-    }
-}
 
 
 // MARK: - AI Curator Note

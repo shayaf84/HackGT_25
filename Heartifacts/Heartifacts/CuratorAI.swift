@@ -11,21 +11,21 @@ struct DALLERequest: Codable {
     let style: String
 }
 
-struct DALLEResponse: Codable {
+struct DALLEResponse: Codable, @unchecked Sendable {
     let data: [DALLEImage]
     let created: Int
 }
 
-struct DALLEImage: Codable {
+struct DALLEImage: Codable, @unchecked Sendable {
     let url: String
     let revised_prompt: String?
 }
 
-struct APIErrorResponse: Codable {
+struct APIErrorResponse: Codable, @unchecked Sendable {
     let error: APIError
 }
 
-struct APIError: Codable {
+struct APIError: Codable, @unchecked Sendable {
     let message: String
     let type: String?
     let code: String?
@@ -179,34 +179,40 @@ class CuratorAI {
                 }
             }
             
-            do {
-                let response = try JSONDecoder().decode(DALLEResponse.self, from: data)
-                
-                if !response.data.isEmpty, let imageData = response.data.first {
-                    let artData = ArtData(
-                        title: "\(category) Artifact",
-                        description: self.createDescription(for: category, sleepScore: sleepScore),
-                        imageURL: imageData.url,
-                        sleepScore: sleepScore,
-                        generatedDate: Date()
-                    )
+            DispatchQueue.global(qos: .background).async {
+                do {
+                    let response = try JSONDecoder().decode(DALLEResponse.self, from: data)
+                    
+                    if !response.data.isEmpty, let imageData = response.data.first {
+                        let artData = ArtData(
+                            title: "\(category) Artifact",
+                            description: self.createDescription(for: category, sleepScore: sleepScore),
+                            imageURL: imageData.url,
+                            sleepScore: sleepScore,
+                            generatedDate: Date()
+                        )
+                        
+                        DispatchQueue.main.async {
+                            completion(artData)
+                        }
+                    } else {
+                        print("No image data in response - data array is empty")
+                        DispatchQueue.main.async {
+                            completion(nil)
+                        }
+                    }
+                } catch {
+                    print("Error decoding response: \(error)")
+                    
+                    // Try to decode as error response
+                    if let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                        print("API Error Response: \(errorResponse)")
+                    }
                     
                     DispatchQueue.main.async {
-                        completion(artData)
+                        completion(nil)
                     }
-                } else {
-                    print("No image data in response - data array is empty")
-                    completion(nil)
                 }
-            } catch {
-                print("Error decoding response: \(error)")
-                
-                // Try to decode as error response
-                if let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
-                    print("API Error Response: \(errorResponse)")
-                }
-                
-                completion(nil)
             }
         }.resume()
     }
