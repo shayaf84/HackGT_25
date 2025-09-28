@@ -979,29 +979,88 @@ struct TasksView: View {
         TaskItem(title: "Plan next acquisition", isCompleted: false)
     ]
     
+    private var completedTasks: Int {
+        tasks.filter { $0.isCompleted }.count
+    }
+    
+    private var completionPercentage: Double {
+        guard !tasks.isEmpty else { return 0 }
+        return Double(completedTasks) / Double(tasks.count)
+    }
+    
     var body: some View {
-        VStack {
-            Text("Tasks")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-                .padding(.top, 20)
+        ZStack {
+            // Background
+            AppBackground()
             
-            List {
-                ForEach(tasks.indices, id: \.self) { index in
-                    TaskRowView(task: $tasks[index])
-                }
-            }
-            .listStyle(PlainListStyle())
-            .scrollContentBackground(.hidden)
-            .background(Color.clear)
-        }
-        .background(
-            Image("task")
-                .resizable()
-                .scaledToFill()
+            // Dark overlay
+            Color.black.opacity(0.3)
                 .ignoresSafeArea()
-        )
+            
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Hero Header
+                    HeroHeaderSection(
+                        title: "Tasks",
+                        subtitle: "Today's Commitments",
+                        caption: "\(completedTasks) of \(tasks.count) completed"
+                    )
+                    
+                    // Progress Card
+                    GlassCard {
+                        VStack(spacing: 16) {
+                            HStack {
+                                Text("Progress")
+                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                Text("\(Int(completionPercentage * 100))%")
+                                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                                    .foregroundColor(HeartifactsTheme.accent)
+                            }
+                            
+                            // Progress bar
+                            GeometryReader { geometry in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .fill(Color.white.opacity(0.1))
+                                        .frame(height: 8)
+                                    
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .fill(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [
+                                                    HeartifactsTheme.accent,
+                                                    HeartifactsTheme.accent.opacity(0.7)
+                                                ]),
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                        .frame(width: geometry.size.width * completionPercentage, height: 8)
+                                        .animation(.easeInOut(duration: 0.8), value: completionPercentage)
+                                }
+                            }
+                            .frame(height: 8)
+                        }
+                        .padding(20)
+                    }
+                    
+                    // Tasks List
+                    VStack(spacing: 12) {
+                        ForEach(tasks.indices, id: \.self) { index in
+                            TaskRowView(task: $tasks[index])
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    Spacer(minLength: 100)
+                }
+                .padding(.top, 60)
+            }
+        }
     }
 }
 
@@ -1015,25 +1074,58 @@ struct TaskRowView: View {
     @Binding var task: TaskItem
     
     var body: some View {
-        HStack {
-            Button(action: {
-                task.isCompleted.toggle()
-            }) {
-                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(task.isCompleted ? .green : .gray)
-                    .font(.title2)
+        GlassCard {
+            HStack(spacing: 16) {
+                Button(action: {
+                    withAnimation(.interactiveSpring(response: 0.4, dampingFraction: 0.8)) {
+                        task.isCompleted.toggle()
+                    }
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                task.isCompleted ? 
+                                LinearGradient(
+                                    gradient: Gradient(colors: [HeartifactsTheme.accent, HeartifactsTheme.accent.opacity(0.7)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ) :
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.white.opacity(0.1), Color.white.opacity(0.05)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 24, height: 24)
+                        
+                        if task.isCompleted {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+                .scaleEffect(task.isCompleted ? 1.1 : 1.0)
+                .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.6), value: task.isCompleted)
+                
+                Text(task.title)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundColor(.white)
+                    .strikethrough(task.isCompleted)
+                    .opacity(task.isCompleted ? 0.7 : 1.0)
+                    .animation(.easeInOut(duration: 0.3), value: task.isCompleted)
+                
+                Spacer()
+                
+                if task.isCompleted {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(HeartifactsTheme.accent)
+                        .animation(.interactiveSpring(response: 0.4, dampingFraction: 0.8), value: task.isCompleted)
+                }
             }
-            
-            Text(task.title)
-                .foregroundColor(.white)
-                .strikethrough(task.isCompleted)
-                .opacity(task.isCompleted ? 0.6 : 1.0)
-            
-            Spacer()
+            .padding(16)
         }
-        .padding(.vertical, 8)
-        .background(Color.black.opacity(0.3))
-        .cornerRadius(8)
     }
 }
 
@@ -1273,77 +1365,116 @@ struct ProfileView: View {
         Achievement(title: "Master Curator", description: "Managed 100 artifacts", isUnlocked: false)
     ]
     
+    private var unlockedAchievements: Int {
+        achievements.filter { $0.isUnlocked }.count
+    }
+    
     var body: some View {
-        VStack(spacing: 20) {
-            // Profile Header
-            VStack {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(.blue)
-                
-                Text(userName)
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                
-                Text("Level \(userLevel)")
-                    .font(.headline)
-                    .foregroundColor(.blue)
-            }
-            .padding(.top, 20)
+        ZStack {
+            // Background
+            AppBackground()
             
-            // Stats
-            HStack(spacing: 30) {
-                VStack {
-                    Text("\(totalArtifacts)")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(.orange)
-                    Text("Artifacts")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                }
-                
-                VStack {
-                    Text("23")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(.green)
-                    Text("Days Active")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                }
-            }
-            .padding()
-            .background(Color.black.opacity(0.4))
-            .cornerRadius(15)
+            // Dark overlay
+            Color.black.opacity(0.3)
+                .ignoresSafeArea()
             
-            // Achievements
-            VStack(alignment: .leading) {
-                Text("Achievements")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding(.horizontal)
-                
-                ScrollView {
-                    LazyVStack(spacing: 10) {
-                        ForEach(achievements) { achievement in
-                            AchievementRow(achievement: achievement)
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Hero Header
+                    HeroHeaderSection(
+                        title: "Profile",
+                        subtitle: "Museum Curator",
+                        caption: "Level \(userLevel) • \(unlockedAchievements) achievements"
+                    )
+                    
+                    // Profile Card
+                    GlassCard {
+                        VStack(spacing: 20) {
+                            // Profile Avatar
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                HeartifactsTheme.accent,
+                                                HeartifactsTheme.accent.opacity(0.7)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 80, height: 80)
+                                
+                                Image(systemName: "person.crop.circle.fill")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            VStack(spacing: 8) {
+                                Text(userName)
+                                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                
+                                Text("Level \(userLevel)")
+                                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                                    .foregroundColor(HeartifactsTheme.accent)
+                            }
+                        }
+                        .padding(24)
+                    }
+                    
+                    // Stats Section
+                    VStack(spacing: 16) {
+                        HStack(spacing: 16) {
+                            StatCard(
+                                title: "\(totalArtifacts)",
+                                subtitle: "Artifacts",
+                                color: HeartifactsTheme.accent
+                            )
+                            
+                            StatCard(
+                                title: "23",
+                                subtitle: "Days Active",
+                                color: .green
+                            )
+                            
+                            StatCard(
+                                title: "\(unlockedAchievements)",
+                                subtitle: "Achievements",
+                                color: .orange
+                            )
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
+                    
+                    // Achievements Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Text("Achievements")
+                                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                            
+                            Text("\(unlockedAchievements)/\(achievements.count)")
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .foregroundColor(HeartifactsTheme.accent)
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        VStack(spacing: 12) {
+                            ForEach(achievements) { achievement in
+                                AchievementRow(achievement: achievement)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                    
+                    Spacer(minLength: 100)
                 }
-                .frame(maxHeight: 200)
+                .padding(.top, 60)
             }
-            
-            Spacer()
         }
-        .background(
-            Image("sky")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-        )
     }
 }
 
@@ -1354,30 +1485,75 @@ struct Achievement: Identifiable {
     let isUnlocked: Bool
 }
 
+struct StatCard: View {
+    let title: String
+    let subtitle: String
+    let color: Color
+    
+    var body: some View {
+        GlassCard {
+            VStack(spacing: 8) {
+                Text(title)
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundColor(color)
+                
+                Text(subtitle)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.8))
+            }
+            .padding(16)
+        }
+    }
+}
+
 struct AchievementRow: View {
     let achievement: Achievement
     
     var body: some View {
-        HStack {
-            Image(systemName: achievement.isUnlocked ? "star.fill" : "star")
-                .foregroundColor(achievement.isUnlocked ? .yellow : .gray)
-            
-            VStack(alignment: .leading) {
-                Text(achievement.title)
-                    .font(.headline)
-                    .foregroundColor(.white)
+        GlassCard {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            achievement.isUnlocked ?
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.yellow, Color.orange]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ) :
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.white.opacity(0.1), Color.white.opacity(0.05)]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 32, height: 32)
+                    
+                    Image(systemName: achievement.isUnlocked ? "star.fill" : "star")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(achievement.isUnlocked ? .white : .white.opacity(0.5))
+                }
                 
-                Text(achievement.description)
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.8))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(achievement.title)
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(achievement.isUnlocked ? .white : .white.opacity(0.6))
+                    
+                    Text(achievement.description)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                
+                Spacer()
+                
+                if achievement.isUnlocked {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.green)
+                }
             }
-            
-            Spacer()
+            .padding(16)
         }
-        .padding()
-        .background(Color.black.opacity(0.3))
-        .cornerRadius(10)
-        .opacity(achievement.isUnlocked ? 1.0 : 0.6)
     }
 }
 
