@@ -1046,32 +1046,82 @@ struct GalleryView: View {
         Artifact(name: "Bronze Statue", description: "Small deity figure", imageName: "museum")
     ]
     
+    @State private var selectedArtifactIndex = 0
+    
+    private var selectedArtifact: Artifact {
+        artifacts[selectedArtifactIndex]
+    }
+    
     var body: some View {
-        VStack {
-            Text("Gallery")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-                .padding(.top, 20)
-            
-            ScrollView {
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ], spacing: 20) {
-                    ForEach(artifacts) { artifact in
-                        ArtifactCard(artifact: artifact)
-                    }
-                }
-                .padding()
-            }
-        }
-        .background(
+        ZStack {
+            // Museum background
             Image("museum")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-        )
+            
+            // Dark overlay for better text visibility
+            LinearGradient(
+                gradient: Gradient(colors: [Color.black.opacity(0.3), Color.clear, Color.black.opacity(0.3)]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("Gallery")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
+                    
+                    Spacer()
+                    
+                    Text("\(selectedArtifactIndex + 1) of \(artifacts.count)")
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.8))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .fill(Color.black.opacity(0.4))
+                        )
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 60)
+                
+                Spacer()
+                
+                // Main artifact display
+                TabView(selection: $selectedArtifactIndex) {
+                    ForEach(Array(artifacts.enumerated()), id: \.offset) { index, artifact in
+                        ArtifactPedestalView(artifact: artifact)
+                            .tag(index)
+                    }
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                .frame(maxHeight: .infinity)
+                
+                // Artifact info panel
+                VStack(spacing: 16) {
+                    Text(selectedArtifact.name)
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                    
+                    Text(selectedArtifact.description)
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                }
+                .padding(.horizontal, 32)
+                .padding(.bottom, 120)
+            }
+        }
     }
 }
 
@@ -1106,6 +1156,75 @@ struct ArtifactCard: View {
         .padding()
         .background(Color.black.opacity(0.4))
         .cornerRadius(15)
+    }
+}
+
+struct ArtifactPedestalView: View {
+    let artifact: Artifact
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Pedestal base
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.white.opacity(0.15),
+                            Color.white.opacity(0.05)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 280, height: 40)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
+            
+            // Artifact on pedestal
+            ZStack {
+                // Glow effect behind artifact
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            gradient: Gradient(colors: [
+                                Color.white.opacity(0.1),
+                                Color.clear
+                            ]),
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 120
+                        )
+                    )
+                    .frame(width: 240, height: 240)
+                    .blur(radius: 20)
+                
+                // Main artifact image
+                Image(artifact.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.white.opacity(0.3),
+                                        Color.white.opacity(0.1)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.4), radius: 30, x: 0, y: 15)
+            }
+            .offset(y: -20)
+        }
     }
 }
 
